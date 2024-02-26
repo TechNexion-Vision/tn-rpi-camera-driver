@@ -14,7 +14,7 @@
 
 ## Support System Version
 
-- [Raspberry Pi OS (64-bit) 2023-12-06](https://downloads.raspberrypi.com/raspios_arm64/images/raspios_arm64-2023-12-06/) [[kernel 6.1]](https://github.com/raspberrypi/linux/tree/rpi-6.1.y)
+- [Raspberry Pi OS (64-bit) 2023-12-06](https://downloads.raspberrypi.com/raspios_arm64/images/raspios_arm64-2023-12-06/) [[kernel 6.1.y]](https://github.com/raspberrypi/linux/tree/rpi-6.1.y)
 
 ## Support Camera Modules
 
@@ -184,11 +184,10 @@ Device found:
 
         name  : unicam
         class : Video/Source
-        caps  : video/x-raw, format=UYVY, width=1920, height=1200, pixel-aspect-ratio=1/1, framerate=39/1
-                video/x-raw, format=UYVY, width=1920, height=1080, pixel-aspect-ratio=1/1, framerate=43/1
-                video/x-raw, format=UYVY, width=1280, height=720, pixel-aspect-ratio=1/1, framerate=98/1
-                video/x-raw, format=UYVY, width=640, height=480, pixel-aspect-ratio=1/1, framerate=120/1
-                video/x-raw(format:Interlaced), format=UYVY, width=640, height=480, pixel-aspect-ratio=1/1, framerate=120/1, interlace-mode=alternate
+        caps  : video/x-raw, format=UYVY, width=1280, height=800, pixel-aspect-ratio=1/1, framerate=60/1
+                video/x-raw, format=UYVY, width=1280, height=720, pixel-aspect-ratio=1/1, framerate=60/1
+                video/x-raw, format=UYVY, width=640, height=480, pixel-aspect-ratio=1/1, framerate=60/1
+                video/x-raw(format:Interlaced), format=UYVY, width=640, height=480, pixel-aspect-ratio=1/1, framerate=60/1, interlace-mode=alternate
         properties:
                 udev-probed = true
                 device.bus_path = platform-fe801000.csi
@@ -207,7 +206,7 @@ Device found:
         gst-launch-1.0 v4l2src ! ...
 ```
 
-3. Bring up the camera (/dev/video0) with 640x480 by Gstreamer pipeline.
+4. Bring up the camera (/dev/video0) with 640x480 by Gstreamer pipeline.
 
 ```shell
 $ DISPLAY=:0 gst-launch-1.0 v4l2src device=/dev/video0 ! \
@@ -215,7 +214,7 @@ $ DISPLAY=:0 gst-launch-1.0 v4l2src device=/dev/video0 ! \
 fpsdisplaysink video-sink=glimagesink sync=false
 ```
 
-4. Change resolution with 1280x720 and bring up by Gstreamer pipeline directly.
+5. Change resolution with 1280x720 and bring up by Gstreamer pipeline directly.
 
 ```shell
 $ DISPLAY=:0 gst-launch-1.0 v4l2src device=/dev/video0 ! \
