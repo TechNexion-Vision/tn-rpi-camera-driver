@@ -1,0 +1,32 @@
+// Fragment that configures an tevs
+
+cam_node: tevs@48 {
+	compatible = "tn,tevs";
+	reg = <0x48>;
+	status = "disabled";
+
+	clocks = <&cam1_clk>;
+	clock-names = "xclk";
+
+	VANA-supply = <&cam1_reg>;	/* 2.8v */
+	VDIG-supply = <&cam_dummy_reg>;	/* 1.8v */
+	VDDL-supply = <&cam_dummy_reg>;	/* 1.2v */
+
+	standby-gpios = <&gpio_expander 2 GPIO_ACTIVE_HIGH>;
+
+	rotation = <180>;
+	orientation = <0>;
+	data-lanes = <2>;
+	data-frequency = <800>;
+	continuous-clock = <0>;
+
+	port {
+		cam_endpoint: endpoint {
+			clock-lanes = <0>;
+			data-lanes = <1 2>;
+			clock-noncontinuous;
+			link-frequencies =
+				/bits/ 64 <456000000>;
+		};
+	};
+};
