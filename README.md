@@ -10,11 +10,12 @@
 [TechNexion Embedded Vision Solutions](https://www.technexion.com/products/embedded-vision/) provide embedded system developers access to high-performance, industrial-grade camera solutions to accelerate their time to market for embedded vision projects.
 
 ### Version 0.0.1 (Beta)
+
 ---
 
 ## Support System Version
 
-- [Raspberry Pi OS (Legacy) 32-bit 2023-02-22](https://downloads.raspberrypi.com/raspios_oldstable_armhf/images/raspios_oldstable_armhf-2023-02-22/) [[kernel 5.10.y]](https://github.com/raspberrypi/linux/tree/rpi-5.10.y)
+- [Raspberry Pi OS 32-bit 2022-01-28](https://downloads.raspberrypi.com/raspios_full_armhf/images/raspios_full_armhf-2022-01-28/) [[kernel 5.10.y]](https://github.com/raspberrypi/linux/tree/rpi-5.10.y)
 
 ## Support Camera Modules
 
@@ -34,6 +35,7 @@
 - [Raspberry Pi 4B](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/)
 
 ---
+
 ## Install TN Camera on Raspberry Pi
 
 #### Adaptor for **Raspberry Pi Camera**
@@ -48,12 +50,67 @@ TEVS-RPI15 Adaptor for TEVS
 
 ---
 
+#### Method 1 - Using Technexion Pre-built modules, only for **kernel 5.10.92-v7l+**
 
-#### Build drivers from source code (cross-compiling)
+1. Make a SD card with *"Raspberry Pi OS 32-bit 2022-01-28"* on Raspberry Pi Imager.
+
+2. Boot RPI4 with SD card.
+
+3. Modify raspberry pi config when using the camera for the first time.
+
+```shell
+$ sudo raspi-config
+```
+
+and then choose `Interface Options` > `Camera` > `Yes` > `Ok` > `Finish` > `No`.\
+Note: Don't reboot system immediately, you will need to install camera driver.
+
+4. Download pre-built modules.
+
+```shell
+$ wget https://download.technexion.com/demo_software/EVK/RPI/RPI4/pre-built-modules/latest/tn_camera_module_rpi4_5.10.y.tar.gz
+```
+
+5. Uncompress the modules.
+
+```shell
+$ tar -xf tn_camera_module_rpi4_5.10.y.tar.gz
+```
+
+6. Run installation script.
+
+```shell
+$ cd tn_camera_module_rpi4_5.10.y/
+$ sh tn_install.sh
+****** TechNexion Camera Driver Installation ******
+This installation is easy to install TechnNexion Camera Drivers for Raspberry Pi 4. 
+Before start to install camera driver, You should BACKUP your image and config 
+to avoid any file you lost while installing process.
+Do you want to continue?[Y/n]y
+Continuing with the installation...
+Install TN-CAM modules: tevs.ko
+Installed TN-CAM module file Done.
+Install TN-CAM DTBO file: tevs.dtbo
+Installed TN-CAM DTBO file Done.
+Add TN-CAM Configuration for modules: tevs
+Install TN-CAM service...
+Launch TN-CAM Service...
+Created symlink /etc/systemd/system/multi-user.target.wants/tn_cam.service → /etc/systemd/system/tn_cam.service.
+Job for tn_cam.service failed because the control process exited with error code.
+See "systemctl status tn_cam.service" and "journalctl -xe" for details.
+Finish Camera Driver Installation. Return Code:[1]
+You should Reboot Device to enable TEVS Cameras.
+Do you want to reboot now?[Y/n]y
+Rebooting....
+```
+
+---
+
+#### Method 2 - Build drivers from source code (cross-compiling)
 
 1. You can reference [Raspberrypi Documentation - Building the kernel](https://www.raspberrypi.com/documentation/computers/linux_kernel.html#kernel).
 
-2. Make sure the dependencies
+2. Make sure the dependencies.
 
 ```shell
 $ sudo apt install -y git bc bison flex libssl-dev make libc6-dev libncurses5-dev
@@ -62,24 +119,24 @@ $ sudo apt install -y git bc bison flex libssl-dev make libc6-dev libncurses5-de
 $ sudo apt install -y crossbuild-essential-armhf
 ```
 
-3. Get the kernel sources
+3. Get the kernel sources.
 
 ```shell
 # raspberrypi linux kerbel
-$ git clone -b rpi-5.10.y git@github.com:raspberrypi/linux.git
+$ git clone --depth=1 -b rpi-5.10.y https://github.com/raspberrypi/linux
 
 # technexion rpi camera driver
-$ git clone -b tn_rpi_kernel-5.10 git@github.com:TechNexion-Vision/tn-rpi-camera-driver.git
+$ git clone --depth=1 -b tn_rpi_kernel-5.10 https://github.com/TechNexion-Vision/tn-rpi-camera-driver.git
 ```
 
-4. Copy TN rpi camera driver to raspberrypi linux kernel
+4. Copy TN rpi camera driver to raspberrypi linux kernel.
 
 ```shell
-$ cp -r tn-rpi-camera-driver/drivers/media/i2c linux/drivers/media/i2c
-$ cp -r tn-rpi-camera-driver/arch/arm/boot/dts/overlays linux/arch/arm/boot/dts/overlays
+$ cp -rv tn-rpi-camera-driver/drivers/media/i2c/* linux/drivers/media/i2c/
+$ cp -rv tn-rpi-camera-driver/arch/arm/boot/dts/overlays/* linux/arch/arm/boot/dts/overlays/
 ```
 
-5. Build sources
+5. Build sources.
 
 ```shell
 $ cd linux
@@ -97,8 +154,8 @@ $ make menuconfig
 #     -> Media ancillary drivers
 #       -> Camera sensor devices
 #         -> TechNexion TEVS sensor support
-#            Press "m", save and exit
-> change "VIDEO_TEVS" to module
+#            Set "VIDEO_TEVS" to module,
+#            Press "m", save to original name (.config) and exit
 
 # build kernel
 $ mkdir -p modules
@@ -107,43 +164,40 @@ $ make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- LOCALVERSION="-tn-raspi" -j$(
 $ sudo make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=$MODULE_PATH modules_install
 ```
 
-6. Plug in the SD card which burned Raspberry Pi OS (Legacy) 32-bit 2023-02-22 to PC
+6. Plug in the SD card which burned *"Raspberry Pi OS 32-bit 2022-01-28"* to PC.
 
-7. Install onto the SD card
+7. Install onto the SD card.
 
 ```shell
 $ sudo cp arch/arm/boot/zImage /media/$(users)/boot/$KERNEL.img
 $ sudo cp arch/arm/boot/dts/*.dtb /media/$(users)/boot
 $ sudo cp arch/arm/boot/dts/overlays/*.dtb* /media/$(users)/boot/overlays/
 $ sudo cp arch/arm/boot/dts/overlays/README /media/$(users)/boot/overlays/
-# you can use "make kernelversion" to check kernel version 
+# you can use "make kernelversion" to check kernel version
 $ sudo cp -ra modules/lib/modules/$(make kernelversion)-v7l-tn-raspi/ /media/$(users)/rootfs/lib/modules/.
 $ sync
 ```
 
-#### Set up Camera
+8. Boot RPI4 with SD card.
 
-Modify raspi config.txt when using the camera for the first time.
+9. Modify raspberry pi config when using the camera for the first time.
 
 ```shell
 $ sudo raspi-config
 ```
 
-and then choose `Interface Options` > `Camera` > `Yes` > `Ok` > `Finish` > `No`.
+and then choose `Interface Options` > `Camera` > `Yes` > `Ok` > `Finish` > `No`.\
+Don't reboot system immediately, you will need to add camera configuraion manually.
 
-Don't reboot system directly, you need to add camera configuraion manually.
+10. Add `dtoverlay=tevs` in the last line and `Ctrl+x` > `y` > `Enter` to save file.
 
 ```shell
 $ sudo nano /boot/config.txt
+
+> dtoverlay=tevs
 ```
 
-Add `dtoverlay=tevs` in the last line and `Ctrl+x` > `y` > `Enter` to save file.
-
-```shell
-dtoverlay=tevs
-```
-
-Restart system.
+11. Restart system.
 
 ```shell
 $ sudo reboot
