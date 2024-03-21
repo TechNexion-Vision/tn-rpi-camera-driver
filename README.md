@@ -48,8 +48,54 @@ TEVS-RPI15 Adaptor for TEVS
 
 ---
 
+#### Method 1 - Using Technexion Pre-built modules, only for **kernel 6.1.77-v8l**
 
-#### Build drivers from source code (cross-compiling)
+1. Make a SD card with *"Raspberry Pi OS (64-bit) 2023-12-06"* on Raspberry Pi Imager.
+
+2. Boot RPI4 with SD card.
+
+3. Download pre-built modules.
+
+```shell
+$ wget https://download.technexion.com/demo_software/EVK/RPI/RPI4/pre-built-modules/latest/tn_camera_module_rpi4_6.1.y.tar.gz
+```
+
+4. Uncompress the modules.
+
+```shell
+$ tar -xf tn_camera_module_rpi4_6.1.y.tar.gz
+```
+
+5. Run installation script.
+
+```shell
+$ cd tn_camera_module_rpi4_6.1.y/
+$ sh tn_install.sh
+****** TechNexion Camera Driver Installation ******
+This installation is easy to install TechnNexion Camera Drivers for Raspberry Pi 4. 
+Before start to install camera driver, You should BACKUP your image and config 
+to avoid any file you lost while installing process.
+Do you want to continue?[Y/n]y
+Continuing with the installation...
+Install TN-CAM modules: tevs.ko.xz
+Installed TN-CAM module file Done.
+Install TN-CAM DTBO file: tevs.dtbo
+Installed TN-CAM DTBO file Done.
+Add TN-CAM Configuration for modules: tevs
+Install TN-CAM service...
+Launch TN-CAM Service...
+Created symlink /etc/systemd/system/multi-user.target.wants/tn_cam.service → /etc/systemd/system/tn_cam.service.
+Job for tn_cam.service failed because the control process exited with error code.
+See "systemctl status tn_cam.service" and "journalctl -xeu tn_cam.service" for details.
+Finish Camera Driver Installation. Return Code:[1]
+You should Reboot Device to enable TEVS Cameras.
+Do you want to reboot now?[Y/n]y
+Rebooting....
+```
+
+---
+
+#### Method 2 - Build drivers from source code (cross-compiling)
 
 1. You can reference [Raspberrypi Documentation - Building the kernel](https://www.raspberrypi.com/documentation/computers/linux_kernel.html#kernel).
 
@@ -66,17 +112,17 @@ $ sudo apt install -y crossbuild-essential-arm64
 
 ```shell
 # raspberrypi linux kerbel
-$ git clone -b rpi-6.1.y git@github.com:raspberrypi/linux.git
+$ git clone --depth=1 -b rpi-6.1.y https://github.com/raspberrypi/linux
 
 # technexion rpi camera driver
-$ git clone -b tn_rpi_kernel-6.1 git@github.com:TechNexion-Vision/tn-rpi-camera-driver.git
+$ git clone --depth=1 -b tn_rpi_kernel-6.1 https://github.com/TechNexion-Vision/tn-rpi-camera-driver.git
 ```
 
 4. Copy TN rpi camera driver to raspberrypi linux kernel
 
 ```shell
-$ cp -r tn-rpi-camera-driver/drivers/media/i2c linux/drivers/media/i2c
-$ cp -r tn-rpi-camera-driver/arch/arm64/boot/dts/overlays linux/arch/arm64/boot/dts/overlays
+$ cp -rv tn-rpi-camera-driver/drivers/media/i2c/* linux/drivers/media/i2c/
+$ cp -rv tn-rpi-camera-driver/arch/arm64/boot/dts/overlays/* linux/arch/arm64/boot/dts/overlays/
 ```
 
 5. Build sources
@@ -96,8 +142,8 @@ $ make menuconfig
 #     -> Media ancillary drivers
 #       -> Camera sensor devices
 #         -> TechNexion TEVS sensor support
-#            Press "m", save and exit
-> change "VIDEO_TEVS" to module
+#            Set "VIDEO_TEVS" to module,
+#            Press "m", save to original name (.config) and exit
 
 # build kernel
 $ mkdir -p modules
@@ -106,7 +152,7 @@ $ make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LOCALVERSION="-tn-raspi" -j$(
 $ sudo make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- INSTALL_MOD_PATH=$MODULE_PATH modules_install
 ```
 
-6. Plug in the SD card which burned Raspberry Pi OS (64-bit) 2023-12-06 to PC
+6. Plug in the SD card which burned *"Raspberry Pi OS (64-bit) 2023-12-06"* to PC
 
 7. Install onto the SD card
 
@@ -120,24 +166,21 @@ $ sudo cp -ra modules/lib/modules/$(make kernelversion)-v8-tn-raspi/ /media/$(us
 $ sync
 ```
 
-#### Set up Camera
+8. Boot RPI4 with SD card.
 
-Modify the config.txt file to add camera configuraion.
+9. Modify the config.txt file to add camera configuraion.
 
 ```shell
 $ sudo nano /boot/firmware/config.txt
-```
 
+# Automatically load overlays for detected cameras
+> camera_auto_detect=0
+> dtoverlay=tevs,media-controller=0
+```
 Modify `camera_auto_detect=0` and add `dtoverlay=tevs,media-controller=0` after the line.
 And then `Ctrl+x` > `y` > `Enter` to save file.
 
-```shell
-# Automatically load overlays for detected cameras
-camera_auto_detect=0
-dtoverlay=tevs,media-controller=0
-```
-
-Restart system.
+10. Restart system.
 
 ```shell
 $ sudo reboot
