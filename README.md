@@ -271,7 +271,8 @@ $ sudo reboot
 
 ## Bring up Camera by GStreamer
 
-If you succeed in initialing the camera, you can follow the steps to open the camera.
+If you succeed in initialing the camera, you can follow the steps to open the camera. \
+RPi5 always requires Media Controller to configure the pipeline as the front end is more complex since you can't just drive it from /dev/video0.
 
 1. Check the media deivce. (The **/dev/mediaN** node number may move as they are not fixed allocations).
 
@@ -356,20 +357,32 @@ Device topology
 For RPI4:
 ```shell
 $ media-ctl -d /dev/mediaN -p
-Media controller API version 6.6.22
+Media controller API version 6.6.20
 
 Media device information
 ------------------------
-driver          rp1-cfe
-model           rp1-cfe
+driver          unicam
+model           unicam
 serial          
-bus info        platform:1f00128000.csi
-hw revision     0x114666
-driver version  6.6.22
+bus info        platform:fe801000.csi
+hw revision     0x0
+driver version  6.6.20
 
 Device topology
+- entity 1: tevs 10-0048 (1 pad, 1 link)
+            type V4L2 subdev subtype Sensor flags 0
+            device node name /dev/v4l-subdev0
+        pad0: Source
+                [fmt:UYVY8_1X16/640x480@1/30 field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range
+                 crop.bounds:(0,0)/640x480
+                 crop:(0,0)/640x480]
+                -> "unicam-image":0 [ENABLED,IMMUTABLE]
 
-
+- entity 3: unicam-image (1 pad, 1 link)
+            type Node subtype V4L flags 1
+            device node name /dev/video0
+        pad0: Sink
+                <- "tevs 10-0048":0 [ENABLED,IMMUTABLE]
 ```
 
 2. Install GStreamer.
@@ -378,7 +391,7 @@ Device topology
 $ sudo apt-get install -y libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-base-apps gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-pulseaudio
 ```
 
-3. Enable csi2 link for video0 node.
+3. Enable csi2 link for video0 node. (**only for RPI5**)
 
 ```shell
 $ media-ctl -d /dev/mediaN -l '1:4 -> '\''rp1-cfe-csi2_ch0'\'':0 [1]'
@@ -386,18 +399,33 @@ $ media-ctl -d /dev/mediaN -l '1:4 -> '\''rp1-cfe-csi2_ch0'\'':0 [1]'
 
 4. Bring up the camera (/dev/video0) with 640x480 by Gstreamer pipeline.
 
+For RPI5:
 ```shell
 $ media-ctl -d /dev/mediaN -V '16:0 [fmt:UYVY8_1X16/640x480 field:none colorspace:srgb xfer:srgb ycbcr:601]'
 $ DISPLAY=:0 gst-launch-1.0 v4l2src device=/dev/video0 ! \
 "video/x-raw, format=(string)UYVY, width=(int)640, height=(int)480" ! \
 fpsdisplaysink video-sink=glimagesink sync=false
 ```
-Note: Pi5 always requires Media Controller to configure the pipeline as the front end is more complex since you can't just drive it from /dev/video0.
+
+For RPI4:
+```shell
+$ DISPLAY=:0 gst-launch-1.0 v4l2src device=/dev/video0 ! \
+"video/x-raw, format=(string)UYVY, width=(int)640, height=(int)480" ! \
+fpsdisplaysink video-sink=glimagesink sync=false
+```
 
 5. Change resolution with 1280x720 and bring up by Gstreamer pipeline directly.
 
+For RPI5:
 ```shell
 $ media-ctl -d /dev/mediaN -V '16:0 [fmt:UYVY8_1X16/1280x720 field:none colorspace:srgb xfer:srgb ycbcr:601]'
+$ DISPLAY=:0 gst-launch-1.0 v4l2src device=/dev/video0 ! \
+"video/x-raw, format=(string)UYVY, width=(int)1280, height=(int)720" ! \
+fpsdisplaysink video-sink=glimagesink sync=false
+```
+
+For RPI4:
+```shell
 $ DISPLAY=:0 gst-launch-1.0 v4l2src device=/dev/video0 ! \
 "video/x-raw, format=(string)UYVY, width=(int)1280, height=(int)720" ! \
 fpsdisplaysink video-sink=glimagesink sync=false
