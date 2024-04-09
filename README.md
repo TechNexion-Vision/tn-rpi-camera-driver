@@ -32,6 +32,7 @@
 ## Supported Raspberry Pi
 
 - [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/)
+- [Raspberry Pi 4 Model B](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/)
 
 ---
 ## Install TN Camera on Raspberry Pi
@@ -46,28 +47,49 @@ TEVS-RPI22 Adaptor for TEVS
  <img src="https://www.technexion.com/wp-content/uploads/2023/11/tevs-ar0144-c-s33-ir-rpi22.png" width="400" height="400" />
 </a>
 
+TEVS-RPI15 Adaptor for TEVS
+
+> Connect TEVS camera and TEVS-RPI15 adaptor to **Raspberry Pi 4 Model B** directly. 
+
+<a href="https://www.technexion.com/products/embedded-vision/mipi-csi2/evk/tevi-ar0144-c-s33-ir-rpi15/" target="_blank">
+ <img src="https://www.technexion.com/wp-content/uploads/2023/11/tevs-ar0144-c-s33-ir-rpi15.png" width="400" height="400" />
+</a>
+
 ---
 
-#### Method 1 - Using Technexion Pre-built modules, only for **kernel 6.6.20+rpt-rpi-2712**
+#### Method 1 - Using Technexion Pre-built modules, only for **kernel 6.6.20+rpt-rpi-2712 (RPI5)** or **kernel 6.6.20+rpt-rpi-v8 (RPI4)**
 
 1. Make a SD card with *"Raspberry Pi OS (64-bit) 2024-03-15"* on Raspberry Pi Imager.
 
-2. Boot RPI5 with SD card.
+2. Boot RPI5/RPI4 with SD card.
 
 3. Download pre-built modules.
 
+For RPI5:
 ```shell
 $ wget https://download.technexion.com/demo_software/EVK/RPI/RPI5/pre-built-modules/latest/tn_camera_module_rpi5_6.6.y.tar.gz
 ```
 
+For RPI4:
+```shell
+$ wget https://download.technexion.com/demo_software/EVK/RPI/RPI4/pre-built-modules/latest/tn_camera_module_rpi4_6.6.y.tar.gz
+```
+
 4. Uncompress the modules.
 
+For RPI5:
 ```shell
 $ tar -xf tn_camera_module_rpi5_6.6.y.tar.gz
 ```
 
+For RPI4:
+```shell
+$ tar -xf tn_camera_module_rpi4_6.6.y.tar.gz
+```
+
 5. Run installation script.
 
+For RPI5:
 ```shell
 $ cd tn_camera_module_rpi5_6.6.y/
 $ sh tn_install.sh
@@ -85,8 +107,30 @@ Add TN-CAM Configuration for modules: tevs
 Install TN-CAM service...
 Launch TN-CAM Service...
 Created symlink /etc/systemd/system/multi-user.target.wants/tn_cam.service → /etc/systemd/system/tn_cam.service.
-Job for tn_cam.service failed because the control process exited with error code.
-See "systemctl status tn_cam.service" and "journalctl -xeu tn_cam.service" for details.
+Finish Camera Driver Installation. Return Code:[1]
+You should Reboot Device to enable TEVS Cameras.
+Do you want to reboot now?[Y/n]y
+Rebooting....
+```
+
+For RPI4:
+```shell
+$ cd tn_camera_module_rpi4_6.6.y/
+$ sh tn_install.sh
+****** TechNexion Camera Driver Installation ******
+This installation is easy to install TechnNexion Camera Drivers for Raspberry Pi 4. 
+Before start to install camera driver, You should BACKUP your image and config 
+to avoid any file you lost while installing process.
+Do you want to continue?[Y/n]y
+Continuing with the installation...
+Install TN-CAM modules: tevs.ko.xz
+Installed TN-CAM module file Done.
+Install TN-CAM DTBO file: tevs-rpi15.dtbo
+Installed TN-CAM DTBO file Done.
+Add TN-CAM Configuration for modules: tevs
+Install TN-CAM service...
+Launch TN-CAM Service...
+Created symlink /etc/systemd/system/multi-user.target.wants/tn_cam.service → /etc/systemd/system/tn_cam.service.
 Finish Camera Driver Installation. Return Code:[1]
 You should Reboot Device to enable TEVS Cameras.
 Do you want to reboot now?[Y/n]y
@@ -127,6 +171,7 @@ $ cp -rv tn-rpi-camera-driver/arch/arm64/boot/dts/overlays/* linux/arch/arm64/bo
 
 5. Build sources
 
+For RPI5:
 ```shell
 $ cd linux
 $ KERNEL=kernel_2712
@@ -134,7 +179,20 @@ $ KERNEL=kernel_2712
 # default configuration
 $ make distclean
 $ make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- bcm2712_defconfig
+```
 
+For RPI4:
+```shell
+$ cd linux
+$ KERNEL=kernel8
+
+# default configuration
+$ make distclean
+$ make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- bcm2711_defconfig
+```
+
+configuring camera and building kernel image.
+```shell
 # config camera
 $ make menuconfig
 # -> Device Drivers
@@ -166,10 +224,11 @@ $ sudo cp -ra modules/lib/modules/$(make kernelversion)-v8-16k-tn-raspi/ /media/
 $ sync
 ```
 
-8. Boot RPI5 with SD card.
+8. Boot RPI5/RPI4 with SD card.
 
 9. Modify the config.txt file to add the camera configuraion.
 
+For RPI5:
 ```shell
 $ sudo nano /boot/firmware/config.txt
 
@@ -177,7 +236,19 @@ $ sudo nano /boot/firmware/config.txt
 > camera_auto_detect=0
 > dtoverlay=tevs-rpi22
 ```
-Modify `camera_auto_detect=0` and add `dtoverlay=tevs-rpi22` after the line. \
+Modify `camera_auto_detect=0` and add `dtoverlay=tevs-rpi22` after the line.\
+Then `Ctrl+s` to save file and `Ctrl+x` to exit.
+
+For RPI4:
+```shell
+$ sudo nano /boot/firmware/config.txt
+
+# Automatically load overlays for detected cameras
+> camera_auto_detect=0
+> dtoverlay=tevs-rpi15,media-controller=0
+```
+
+Modify `camera_auto_detect=0` and add `dtoverlay=tevs-rpi15,media-controller=0` after the line. \
 Then `Ctrl+s` to save file and `Ctrl+x` to exit.
 
 10. Ensure dependent modules loading order.
@@ -204,6 +275,7 @@ If you succeed in initialing the camera, you can follow the steps to open the ca
 
 1. Check the media deivce. (The **/dev/mediaN** node number may move as they are not fixed allocations).
 
+For RPI5:
 ```shell
 $ media-ctl -d /dev/mediaN -p
 Media controller API version 6.6.22
@@ -277,6 +349,26 @@ Device topology
                 -> "csi2":0 [ENABLED,IMMUTABLE]
 
 ...
+
+
+```
+
+For RPI4:
+```shell
+$ media-ctl -d /dev/mediaN -p
+Media controller API version 6.6.22
+
+Media device information
+------------------------
+driver          rp1-cfe
+model           rp1-cfe
+serial          
+bus info        platform:1f00128000.csi
+hw revision     0x114666
+driver version  6.6.22
+
+Device topology
+
 
 ```
 

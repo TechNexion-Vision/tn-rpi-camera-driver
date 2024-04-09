@@ -15,22 +15,22 @@
 			#size-cells = <0>;
 			status = "okay";
 
-			gpio_expander: pca9554@27 {
+			gpio_expander: pca9554@21 {
 				compatible = "nxp,pca9554";
-				reg = <0x27>;
+				reg = <0x21>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				gpio-line-names = "EXPOSURE_TRIG_IN1", 
-								  "FLASH_OUT1", 
-								  "CAM_SHUTTER1", 
-								  "XVS1",
-								  "CSI1_PDB", 
-								  "CSI1_INT", 
-								  "INFO_TRIG_IN1", 
-								  "CSI1_RST_N";
+				gpio-line-names = "EXPOSURE_TRIG_IN",
+								  "FLASH_OUT",
+								  "STANDBY",
+								  "SHUTTER",
+								  "FRAME_SYNC",
+								  "PWR_TIME0",
+								  "PWR_TIME1",
+								  "PWR_TIME2";
 				status = "okay";
 			};
-
+			
 			cam_node: tevs@48 {
 				compatible = "tn,tevs";
 				reg = <0x48>;
@@ -43,11 +43,11 @@
 				VDIG-supply = <&cam_dummy_reg>;	/* 1.8v */
 				VDDL-supply = <&cam_dummy_reg>;	/* 1.2v */
 
-				standby-gpios = <&gpio_expander 6 GPIO_ACTIVE_HIGH>;
+				standby-gpios = <&gpio_expander 2 GPIO_ACTIVE_HIGH>;
 
 				rotation = <180>;
 				orientation = <0>;
-				data-lanes = <4>;
+				data-lanes = <2>;
 				data-frequency = <800>;
 				continuous-clock = <0>;
 
@@ -55,7 +55,7 @@
 					cam_endpoint: endpoint {
 						remote-endpoint = <&csi_ep>;
 						clock-lanes = <0>;
-						data-lanes = <1 2 3 4>;
+						data-lanes = <1 2>;
 						clock-noncontinuous;
 						link-frequencies =
 							/bits/ 64 <456000000>;
@@ -75,7 +75,7 @@
 				csi_ep: endpoint {
 					remote-endpoint = <&cam_endpoint>;
 					clock-lanes = <0>;
-					data-lanes = <1 2 3 4>;
+					data-lanes = <1 2>;
 					clock-noncontinuous;
 				};
 			};
@@ -109,8 +109,8 @@
 		rotation = <&cam_node>,"rotation:0";
 		orientation = <&cam_node>,"orientation:0";
 		media-controller = <&csi>,"brcm,media-controller?";
-		cam0 = <&i2c_frag>, "target:0=",<&i2c_csi_dsi1>,
-		       <&csi_frag>, "target:0=",<&csi1>,
+		cam0 = <&i2c_frag>, "target:0=",<&i2c_vc>,
+		       <&csi_frag>, "target:0=",<&csi0>,
 		       <&clk_frag>, "target:0=",<&cam0_clk>,
 		       <&cam_node>, "clocks:0=",<&cam0_clk>,
 		       <&cam_node>, "VANA-supply:0=",<&cam0_reg>;
