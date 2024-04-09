@@ -90,9 +90,9 @@ Do you want to continue?[Y/n]y
 Continuing with the installation...
 Install TN-CAM modules: tevs.ko
 Installed TN-CAM module file Done.
-Install TN-CAM DTBO file: tevs.dtbo
+Install TN-CAM DTBO file: tevs-rpi15.dtbo
 Installed TN-CAM DTBO file Done.
-Add TN-CAM Configuration for modules: tevs
+Add TN-CAM Configuration for modules: tevs-rpi15
 Install TN-CAM service...
 Launch TN-CAM Service...
 Created symlink /etc/systemd/system/multi-user.target.wants/tn_cam.service → /etc/systemd/system/tn_cam.service.
@@ -189,12 +189,12 @@ $ sudo raspi-config
 and then choose `Interface Options` > `Camera` > `Yes` > `Ok` > `Finish` > `No`.\
 Don't reboot system immediately, you will need to add camera configuraion manually.
 
-10. Add `dtoverlay=tevs` in the last line and `Ctrl+x` > `y` > `Enter` to save file.
+10. Add `dtoverlay=tevs-rpi15` in the last line and `Ctrl+x` > `y` > `Enter` to save file.
 
 ```shell
 $ sudo nano /boot/config.txt
 
-> dtoverlay=tevs
+> dtoverlay=tevs-rpi15
 ```
 
 11. Restart system.
