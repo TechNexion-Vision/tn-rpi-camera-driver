@@ -31,7 +31,37 @@
 				status = "okay";
 			};
 
-			#include "tevs.dtsi"
+			cam_node: tevs@48 {
+				compatible = "tn,tevs";
+				reg = <0x48>;
+				status = "okay";
+
+				clocks = <&cam1_clk>;
+				clock-names = "xclk";
+
+				VANA-supply = <&cam1_reg>;	/* 2.8v */
+				VDIG-supply = <&cam_dummy_reg>;	/* 1.8v */
+				VDDL-supply = <&cam_dummy_reg>;	/* 1.2v */
+
+				standby-gpios = <&gpio_expander 2 GPIO_ACTIVE_HIGH>;
+
+				rotation = <180>;
+				orientation = <0>;
+				data-lanes = <2>;
+				data-frequency = <800>;
+				continuous-clock = <0>;
+
+				port {
+					cam_endpoint: endpoint {
+						remote-endpoint = <&csi_ep>;
+						clock-lanes = <0>;
+						data-lanes = <1 2>;
+						clock-noncontinuous;
+						link-frequencies =
+							/bits/ 64 <456000000>;
+					};
+				};
+			};
 		};
 	};
 
@@ -85,12 +115,4 @@
 		       <&cam_node>, "clocks:0=",<&cam0_clk>,
 		       <&cam_node>, "VANA-supply:0=",<&cam0_reg>;
 	};
-};
-
-&cam_node {
-	status = "okay";
-};
-
-&cam_endpoint {
-	remote-endpoint = <&csi_ep>;
 };

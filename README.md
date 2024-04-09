@@ -79,14 +79,12 @@ Do you want to continue?[Y/n]y
 Continuing with the installation...
 Install TN-CAM modules: tevs.ko.xz
 Installed TN-CAM module file Done.
-Install TN-CAM DTBO file: tevs.dtbo
+Install TN-CAM DTBO file: tevs-rpi15.dtbo
 Installed TN-CAM DTBO file Done.
-Add TN-CAM Configuration for modules: tevs
+Add TN-CAM Configuration for modules: tevs-rpi15
 Install TN-CAM service...
 Launch TN-CAM Service...
 Created symlink /etc/systemd/system/multi-user.target.wants/tn_cam.service → /etc/systemd/system/tn_cam.service.
-Job for tn_cam.service failed because the control process exited with error code.
-See "systemctl status tn_cam.service" and "journalctl -xeu tn_cam.service" for details.
 Finish Camera Driver Installation. Return Code:[1]
 You should Reboot Device to enable TEVS Cameras.
 Do you want to reboot now?[Y/n]y
@@ -175,9 +173,9 @@ $ sudo nano /boot/firmware/config.txt
 
 # Automatically load overlays for detected cameras
 > camera_auto_detect=0
-> dtoverlay=tevs,media-controller=0
+> dtoverlay=tevs-rpi15,media-controller=0
 ```
-Modify `camera_auto_detect=0` and add `dtoverlay=tevs,media-controller=0` after the line.
+Modify `camera_auto_detect=0` and add `dtoverlay=tevs-rpi15,media-controller=0` after the line.
 And then `Ctrl+x` > `y` > `Enter` to save file.
 
 10. Restart system.
