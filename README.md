@@ -20,6 +20,7 @@
 
 #### MIPI Cameras
 - TEVS-AR0144-C
+- TEVS-AR0145-M
 - TEVS-AR0234-C
 - TEVS-AR0521-C
 - TEVS-AR0522-C
@@ -41,7 +42,7 @@
 
 TEVS-RPI22 Adaptor for TEVS
 
-> Connect TEVS camera and TEVS-RPI22 adaptor to **Raspberry Pi 5 - "CAM/DISP 1"** directly. 
+> Connect TEVS camera and TEVS-RPI22 adaptor to **Raspberry Pi 5 - "CAM/DISP 1"** directly.
 
 <a href="https://www.technexion.com/products/embedded-vision/mipi-csi2/evk/tevs-ar0144-c-s33-ir-rpi22/" target="_blank">
  <img src="https://www.technexion.com/wp-content/uploads/2023/11/tevs-ar0144-c-s33-ir-rpi22.png" width="400" height="400" />
@@ -49,7 +50,7 @@ TEVS-RPI22 Adaptor for TEVS
 
 TEVS-RPI15 Adaptor for TEVS
 
-> Connect TEVS camera and TEVS-RPI15 adaptor to **Raspberry Pi 4 Model B** directly. 
+> Connect TEVS camera and TEVS-RPI15 adaptor to **Raspberry Pi 4 Model B** directly.
 
 <a href="https://www.technexion.com/products/embedded-vision/mipi-csi2/evk/tevi-ar0144-c-s33-ir-rpi15/" target="_blank">
  <img src="https://www.technexion.com/wp-content/uploads/2023/11/tevs-ar0144-c-s33-ir-rpi15.png" width="400" height="400" />
@@ -94,8 +95,8 @@ For RPI5:
 $ cd tn_camera_module_rpi5_6.6.y/
 $ sh tn_install.sh
 ****** TechNexion Camera Driver Installation ******
-This installation is easy to install TechnNexion Camera Drivers for Raspberry Pi 5. 
-Before start to install camera driver, You should BACKUP your image and config 
+This installation is easy to install TechnNexion Camera Drivers for Raspberry Pi 5.
+Before start to install camera driver, You should BACKUP your image and config
 to avoid any file you lost while installing process.
 Do you want to continue?[Y/n]y
 Continuing with the installation...
@@ -118,8 +119,8 @@ For RPI4:
 $ cd tn_camera_module_rpi4_6.6.y/
 $ sh tn_install.sh
 ****** TechNexion Camera Driver Installation ******
-This installation is easy to install TechnNexion Camera Drivers for Raspberry Pi 4. 
-Before start to install camera driver, You should BACKUP your image and config 
+This installation is easy to install TechnNexion Camera Drivers for Raspberry Pi 4.
+Before start to install camera driver, You should BACKUP your image and config
 to avoid any file you lost while installing process.
 Do you want to continue?[Y/n]y
 Continuing with the installation...
@@ -219,7 +220,7 @@ $ sudo cp arch/arm64/boot/Image /media/$(users)/bootfs/$KERNEL.img
 $ sudo cp arch/arm64/boot/dts/broadcom/*.dtb /media/$(users)/bootfs
 $ sudo cp arch/arm64/boot/dts/overlays/*.dtb* /media/$(users)/bootfs/overlays/
 $ sudo cp arch/arm64/boot/dts/overlays/README /media/$(users)/bootfs/overlays/
-# you can use "make kernelversion" to check kernel version 
+# you can use "make kernelversion" to check kernel version
 $ sudo cp -ra modules/lib/modules/$(make kernelversion)-v8-16k-tn-raspi/ /media/$(users)/rootfs/lib/modules/.
 $ sync
 ```
@@ -285,7 +286,7 @@ Media device information
 ------------------------
 driver          rp1-cfe
 model           rp1-cfe
-serial          
+serial
 bus info        platform:1f00128000.csi
 hw revision     0x114666
 driver version  6.6.22
@@ -363,7 +364,7 @@ Media device information
 ------------------------
 driver          unicam
 model           unicam
-serial          
+serial
 bus info        platform:fe801000.csi
 hw revision     0x0
 driver version  6.6.20
