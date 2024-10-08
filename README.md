@@ -1,6 +1,6 @@
 # tn-rpi-camera-driver
 
-[![Technexion](https://github.com/TechNexion-Vision/TEV-Jetson_Camera_driver/assets/28101204/08cd2fa9-7333-4a16-819f-c69a3dbf290c)](https://www.technexion.com/products/embedded-vision/)
+[![Technexion](https://github.com/user-attachments/assets/43961594-0be9-4ec5-9f10-e718446e3d27)](https://www.technexion.com/products/embedded-vision/)
 
 [![Producer: Technexion](https://img.shields.io/badge/Producer-Technexion-blue.svg)](https://www.technexion.com)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
