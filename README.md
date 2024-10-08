@@ -1,6 +1,6 @@
 # tn-rpi-camera-driver
 
-[![Technexion](https://github.com/TechNexion-Vision/TEV-Jetson_Camera_driver/assets/28101204/08cd2fa9-7333-4a16-819f-c69a3dbf290c)](https://www.technexion.com/products/embedded-vision/)
+[![Technexion](https://github.com/user-attachments/assets/43961594-0be9-4ec5-9f10-e718446e3d27)](https://www.technexion.com/products/embedded-vision/)
 
 [![Producer: Technexion](https://img.shields.io/badge/Producer-Technexion-blue.svg)](https://www.technexion.com)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
@@ -47,6 +47,8 @@ TEVS-RPI22 Adaptor for TEVS
 <a href="https://www.technexion.com/products/embedded-vision/mipi-csi2/evk/tevs-ar0144-c-s33-ir-rpi22/" target="_blank">
  <img src="https://www.technexion.com/wp-content/uploads/2023/11/tevs-ar0144-c-s33-ir-rpi22.png" width="400" height="400" />
 </a>
+
+[**Instructional Video**](https://youtu.be/ZfO2v18Tnio?list=PLdUUBf0zT0W8feLAI_IhhhCr6w073zJ-L&t=46)
 
 TEVS-RPI15 Adaptor for TEVS
 
