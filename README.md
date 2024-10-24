@@ -26,6 +26,7 @@
 - TEVS-AR0522-C
 - TEVS-AR0522-M
 - TEVS-AR0821-C
+- TEVS-AR0822-C
 - TEVS-AR1335-C
 
 [More Camera Products Details...](https://www.technexion.com/products/embedded-vision)
