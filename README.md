@@ -45,7 +45,7 @@ TEVS-RPI15 Adaptor for TEVS
 > Connect TEVS camera and TEVS-RPI15 adaptor to **Raspberry Pi** directly.
 
 <a href="https://www.technexion.com/products/embedded-vision/mipi-csi2/evk/tevi-ar0144-c-s33-ir-rpi15/" target="_blank">
- <img src="https://www.technexion.com/wp-content/uploads/2023/11/tevs-ar0144-c-s33-ir-rpi15.png" width="400" height="400" />
+ <img src="https://www.technexion.com/wp-content/uploads/2024/12/tevs-ar0144-c-s33-ir-rpi15.png" width="400" height="400" />
 </a>
 
 ---
@@ -267,6 +267,12 @@ fpsdisplaysink video-sink=glimagesink sync=false
 $ DISPLAY=:0 gst-launch-1.0 v4l2src device=/dev/video0 ! \
 "video/x-raw, format=(string)UYVY, width=(int)1280, height=(int)720" ! \
 fpsdisplaysink video-sink=glimagesink sync=false
+```
+
+6. List all camera controls using `v4l2-ctl`.
+
+```shell
+$ v4l2-ctl -d /dev/v4l-subdev0 --list-ctrls
 ```
 
 ---
