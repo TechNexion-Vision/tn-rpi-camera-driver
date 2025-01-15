@@ -56,7 +56,7 @@ TEVS-RPI15 Adaptor for TEVS
 > Connect TEVS camera and TEVS-RPI15 adaptor to **Raspberry Pi 4 Model B** directly.
 
 <a href="https://www.technexion.com/products/embedded-vision/mipi-csi2/evk/tevi-ar0144-c-s33-ir-rpi15/" target="_blank">
- <img src="https://www.technexion.com/wp-content/uploads/2023/11/tevs-ar0144-c-s33-ir-rpi15.png" width="400" height="400" />
+ <img src="https://www.technexion.com/wp-content/uploads/2024/12/tevs-ar0144-c-s33-ir-rpi15.png" width="400" height="400" />
 </a>
 
 ---
