@@ -46,7 +46,7 @@ TEVS-RPI22 Adaptor for TEVS
 > Connect TEVS camera and TEVS-RPI22 adaptor to **Raspberry Pi 5 - "CAM/DISP 1"** directly.
 
 <a href="https://www.technexion.com/products/embedded-vision/mipi-csi2/evk/tevs-ar0144-c-s33-ir-rpi22/" target="_blank">
- <img src="https://www.technexion.com/wp-content/uploads/2023/11/tevs-ar0144-c-s33-ir-rpi22.png" width="400" height="400" />
+ <img src="https://www.technexion.com/wp-content/uploads/2024/12/tevs-ar0144-c-s33-ir-rpi22.png" width="400" height="400" />
 </a>
 
 [**Instructional Video**](https://youtu.be/ZfO2v18Tnio?list=PLdUUBf0zT0W8feLAI_IhhhCr6w073zJ-L&t=46)
