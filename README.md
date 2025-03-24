@@ -19,15 +19,14 @@
 ## Support Camera Modules
 
 #### MIPI Cameras
-- TEVS-AR0144-C
-- TEVS-AR0145-M
-- TEVS-AR0234-C
-- TEVS-AR0521-C
-- TEVS-AR0522-C
-- TEVS-AR0522-M
-- TEVS-AR0821-C
-- TEVS-AR0822-C
-- TEVS-AR1335-C
+- TEVS-AR0144
+- TEVS-AR0145
+- TEVS-AR0234
+- TEVS-AR0521
+- TEVS-AR0522
+- TEVS-AR0821
+- TEVS-AR0822
+- TEVS-AR1335
 
 [More Camera Products Details...](https://www.technexion.com/products/embedded-vision)
 
