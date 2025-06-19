@@ -282,3 +282,5 @@ $ v4l2-ctl -d /dev/v4l-subdev0 --list-ctrls
 ---
 
 ## WIKI Pages
+
+[TechNexion Raspberry Pi products guide](https://tn-docusaurus.vercel.app/docs/embedded-vision/tevs/usage-guides/raspberrypi/)
