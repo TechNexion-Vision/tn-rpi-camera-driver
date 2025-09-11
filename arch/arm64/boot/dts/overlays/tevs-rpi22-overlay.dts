@@ -18,26 +18,24 @@
 			gpio_expander: pca9554@27 {
 				compatible = "nxp,pca9554";
 				reg = <0x27>;
+				status = "okay";
+
 				gpio-controller;
 				#gpio-cells = <2>;
-				gpio-line-names = "EXPOSURE_TRIG_IN1", 
-								  "FLASH_OUT1", 
-								  "CAM_SHUTTER1", 
+				gpio-line-names = "EXPOSURE_TRIG_IN1",
+								  "FLASH_OUT1",
+								  "CAM_SHUTTER1",
 								  "XVS1",
-								  "CSI1_PDB", 
-								  "CSI1_INT", 
-								  "INFO_TRIG_IN1", 
+								  "CSI1_PDB",
+								  "CSI1_INT",
+								  "INFO_TRIG_IN1",
 								  "CSI1_RST_N";
-				status = "okay";
 			};
 
 			cam_node: tevs@48 {
 				compatible = "tn,tevs";
 				reg = <0x48>;
 				status = "okay";
-
-				clocks = <&cam1_clk>;
-				clock-names = "xclk";
 
 				VANA-supply = <&cam1_reg>;	/* 2.8v */
 				VDIG-supply = <&cam_dummy_reg>;	/* 1.8v */
@@ -47,9 +45,6 @@
 
 				rotation = <180>;
 				orientation = <0>;
-				data-lanes = <4>;
-				data-frequency = <800>;
-				continuous-clock = <0>;
 
 				port {
 					cam_endpoint: endpoint {
@@ -58,7 +53,7 @@
 						data-lanes = <1 2 3 4>;
 						clock-noncontinuous;
 						link-frequencies =
-							/bits/ 64 <456000000>;
+							/bits/ 64 <400000000>;
 					};
 				};
 			};
@@ -90,14 +85,6 @@
 		};
 	};
 
-	clk_frag: fragment@3 {
-		target = <&cam1_clk>;
-		__overlay__ {
-			status = "okay";
-			clock-frequency = <24000000>;
-		};
-	};
-
 	fragment@4 {
 		target = <&i2c0mux>;
 		__overlay__ {
@@ -109,10 +96,8 @@
 		rotation = <&cam_node>,"rotation:0";
 		orientation = <&cam_node>,"orientation:0";
 		media-controller = <&csi>,"brcm,media-controller?";
-		cam0 = <&i2c_frag>, "target:0=",<&i2c_csi_dsi1>,
-		       <&csi_frag>, "target:0=",<&csi1>,
-		       <&clk_frag>, "target:0=",<&cam0_clk>,
-		       <&cam_node>, "clocks:0=",<&cam0_clk>,
+		cam0 = <&i2c_frag>, "target:0=",<&i2c_csi_dsi0>,
+		       <&csi_frag>, "target:0=",<&csi0>,
 		       <&cam_node>, "VANA-supply:0=",<&cam0_reg>;
 	};
 };
