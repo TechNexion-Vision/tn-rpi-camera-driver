@@ -1286,13 +1286,13 @@ static int tevs_set_bsl_mode(struct tevs *tevs, s32 mode)
 		usleep_range(9000, 10000);
 		regulator_bulk_enable(TEVS_NUM_SUPPLIES, tevs->supplies);
 		gpiod_set_value_cansleep(tevs->reset_gpio, 1);
-		msleep(400);
+		usleep_range(9000, 10000);
 
 		msleep(TEVS_BOOT_TIME);
 
 		if (tevs_check_boot_state(tevs) != 0) {
 			dev_err(&client->dev,
-				"check tevs bootup status failed\n");
+				"check tevs bootup status failed before change data frequency\n");
 			return -ENODEV;
 		}
 
@@ -1306,7 +1306,7 @@ static int tevs_set_bsl_mode(struct tevs *tevs, s32 mode)
 				msleep(TEVS_BOOT_TIME);
 				if (tevs_check_boot_state(tevs) != 0) {
 					dev_err(&client->dev,
-						"check tevs bootup status failed\n");
+						"check tevs bootup status failed after change data frequency\n");
 					return -ENODEV;
 				}
 			}
