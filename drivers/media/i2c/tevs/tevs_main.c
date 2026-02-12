@@ -1281,8 +1281,10 @@ static int tevs_set_bsl_mode(struct tevs *tevs, s32 mode)
 
 	switch (mode) {
 	case TEVS_BSL_MODE_NORMAL_IDX:
+		regulator_bulk_disable(TEVS_NUM_SUPPLIES, tevs->supplies);
 		gpiod_set_value_cansleep(tevs->reset_gpio, 0);
 		usleep_range(9000, 10000);
+		regulator_bulk_enable(TEVS_NUM_SUPPLIES, tevs->supplies);
 		gpiod_set_value_cansleep(tevs->reset_gpio, 1);
 		msleep(400);
 
@@ -1347,10 +1349,12 @@ static int tevs_set_bsl_mode(struct tevs *tevs, s32 mode)
 				   tevs->vc_id);
 		break;
 	case TEVS_BSL_MODE_FLASH_IDX:
+		regulator_bulk_disable(TEVS_NUM_SUPPLIES, tevs->supplies);
 		gpiod_set_value_cansleep(tevs->reset_gpio, 0);
 		usleep_range(9000, 10000);
 		gpiod_set_value_cansleep(tevs->standby_gpio, 1);
 		msleep(100);
+		regulator_bulk_enable(TEVS_NUM_SUPPLIES, tevs->supplies);
 		gpiod_set_value_cansleep(tevs->reset_gpio, 1);
 		usleep_range(9000, 10000);
 		gpiod_set_value_cansleep(tevs->standby_gpio, 0);
@@ -2126,13 +2130,13 @@ static int tevs_check_hwcfg(struct device *dev)
 	int ret = 0;
 
 	tevs->reset_gpio =
-		devm_gpiod_get_optional(dev, "VANA-supply", GPIOD_OUT_HIGH);
-	if (IS_ERR(tevs->reset_gpio)) {
-		ret = PTR_ERR(tevs->reset_gpio);
-		if (ret != -EPROBE_DEFER)
-			dev_err(dev, "can not get reset GPIO (%d)", ret);
-		return ret;
-	}
+		devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_LOW);
+	// if (IS_ERR(tevs->reset_gpio)) {
+	// 	ret = PTR_ERR(tevs->reset_gpio);
+	// 	if (ret != -EPROBE_DEFER)
+	// 		dev_err(dev, "can not get reset GPIO (%d)", ret);
+	// 	return ret;
+	// }
 
 	tevs->standby_gpio =
 		devm_gpiod_get_optional(dev, "standby", GPIOD_OUT_LOW);
