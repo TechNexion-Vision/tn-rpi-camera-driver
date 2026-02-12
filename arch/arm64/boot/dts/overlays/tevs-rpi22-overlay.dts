@@ -14,6 +14,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "okay";
+			clock-frequency = <400000>;
 
 			gpio_expander: pca9554@27 {
 				compatible = "nxp,pca9554";
@@ -26,10 +27,10 @@
 								  "FLASH_OUT1",
 								  "CAM_SHUTTER1",
 								  "XVS1",
-								  "CSI1_PDB",
-								  "CSI1_INT",
+								  "EXT_GPIO4",
+								  "EXT_GPIO5",
 								  "INFO_TRIG_IN1",
-								  "CSI1_RST_N";
+								  "EXT_GPIO6";
 			};
 
 			cam_node: tevs@48 {
