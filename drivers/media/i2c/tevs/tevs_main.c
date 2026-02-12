@@ -601,9 +601,9 @@ static int tevs_check_boot_state(struct tevs *tevs)
 			dev_err(&client->dev,
 				"tevs bootup timeout: state: 0x%04X\n",
 				boot_state);
-			ret = -EINVAL;
+			ret = -EBUSY;
 		}
-		msleep(20);
+		msleep(50);
 	}
 
 	return ret;
@@ -1274,6 +1274,7 @@ static int tevs_set_bsl_mode(struct tevs *tevs, s32 mode)
 	struct i2c_client *client = v4l2_get_subdevdata(&tevs->v4l2_subdev);
 	u8 val;
 	u16 data_freq_tmp;
+	int ret = 0;
 	dev_dbg(&client->dev, "%s(): set bls mode: %d", __func__, mode);
 
 	if (tevs->bsl_check == mode)
@@ -1281,18 +1282,18 @@ static int tevs_set_bsl_mode(struct tevs *tevs, s32 mode)
 
 	switch (mode) {
 	case TEVS_BSL_MODE_NORMAL_IDX:
-		regulator_bulk_disable(TEVS_NUM_SUPPLIES, tevs->supplies);
+		ret = regulator_bulk_disable(TEVS_NUM_SUPPLIES, tevs->supplies);
 		gpiod_set_value_cansleep(tevs->reset_gpio, 0);
 		usleep_range(9000, 10000);
-		regulator_bulk_enable(TEVS_NUM_SUPPLIES, tevs->supplies);
+		ret = regulator_bulk_enable(TEVS_NUM_SUPPLIES, tevs->supplies);
 		gpiod_set_value_cansleep(tevs->reset_gpio, 1);
-		usleep_range(9000, 10000);
+		msleep(400);
 
 		msleep(TEVS_BOOT_TIME);
 
 		if (tevs_check_boot_state(tevs) != 0) {
 			dev_err(&client->dev,
-				"check tevs bootup status failed before change data frequency\n");
+				"check tevs bootup status failed\n");
 			return -ENODEV;
 		}
 
@@ -1306,7 +1307,7 @@ static int tevs_set_bsl_mode(struct tevs *tevs, s32 mode)
 				msleep(TEVS_BOOT_TIME);
 				if (tevs_check_boot_state(tevs) != 0) {
 					dev_err(&client->dev,
-						"check tevs bootup status failed after change data frequency\n");
+						"check tevs bootup status failed\n");
 					return -ENODEV;
 				}
 			}
@@ -1349,12 +1350,12 @@ static int tevs_set_bsl_mode(struct tevs *tevs, s32 mode)
 				   tevs->vc_id);
 		break;
 	case TEVS_BSL_MODE_FLASH_IDX:
-		regulator_bulk_disable(TEVS_NUM_SUPPLIES, tevs->supplies);
+		ret = regulator_bulk_disable(TEVS_NUM_SUPPLIES, tevs->supplies);
 		gpiod_set_value_cansleep(tevs->reset_gpio, 0);
 		usleep_range(9000, 10000);
 		gpiod_set_value_cansleep(tevs->standby_gpio, 1);
 		msleep(100);
-		regulator_bulk_enable(TEVS_NUM_SUPPLIES, tevs->supplies);
+		ret = regulator_bulk_enable(TEVS_NUM_SUPPLIES, tevs->supplies);
 		gpiod_set_value_cansleep(tevs->reset_gpio, 1);
 		usleep_range(9000, 10000);
 		gpiod_set_value_cansleep(tevs->standby_gpio, 0);
@@ -1367,7 +1368,7 @@ static int tevs_set_bsl_mode(struct tevs *tevs, s32 mode)
 	}
 
 	tevs->bsl_check = mode;
-	return 0;
+	return ret;
 }
 
 static int tevs_set_max_fps(struct tevs *tevs, s32 value)
@@ -2130,7 +2131,7 @@ static int tevs_check_hwcfg(struct device *dev)
 	int ret = 0;
 
 	tevs->reset_gpio =
-		devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_LOW);
+		devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_HIGH);
 	// if (IS_ERR(tevs->reset_gpio)) {
 	// 	ret = PTR_ERR(tevs->reset_gpio);
 	// 	if (ret != -EPROBE_DEFER)
