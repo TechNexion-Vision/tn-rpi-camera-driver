@@ -307,6 +307,7 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
 	tc358743.dtbo \
 	tc358743-audio.dtbo \
 	tc358743-pi5.dtbo \
+	tevs-rpi15.dtbo \
 	tevs-rpi22.dtbo \
 	tinylcd35.dtbo \
 	tpm-slb9670.dtbo \
