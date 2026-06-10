@@ -279,6 +279,7 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
 	tevs-rpi15.dtbo \
 	tevs-rpi22.dtbo \
 	tevm-rpi15.dtbo \
+	tevm-rpi22.dtbo \
 	tinylcd35.dtbo \
 	tpm-slb9670.dtbo \
 	tpm-slb9673.dtbo \
