@@ -1,13 +1,16 @@
-#include "asm-generic/errno-base.h"
-#include "linux/kernel.h"
+
 #include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/gpio/consumer.h>
 #include <linux/i2c.h>
+#include "linux/kernel.h"
+#include <linux/math64.h>
+#include <linux/media.h>
 #include <linux/module.h>
 #include <linux/pm_runtime.h>
 #include <linux/regmap.h>
 #include <linux/regulator/consumer.h>
+#include <media/media-entity.h>
 #include <media/v4l2-ctrls.h>
 #include <media/v4l2-device.h>
 #include <media/v4l2-event.h>
@@ -17,146 +20,150 @@
 #include "tevs_tbls.h"
 
 /* Define host command register of TEVS information page */
-#define HOST_COMMAND_TEVS_INFO_VERSION_MSB                      (0x3000)
-#define HOST_COMMAND_TEVS_INFO_VERSION_LSB                      (0x3002)
-#define HOST_COMMAND_TEVS_BOOT_STATE                            (0x3004)
+#define HOST_COMMAND_TEVS_INFO_VERSION_MSB 						(0x3000)
+#define HOST_COMMAND_TEVS_INFO_VERSION_LSB 						(0x3002)
+#define HOST_COMMAND_TEVS_BOOT_STATE 							(0x3004)
+#define HOST_COMMAND_TEVS_SENSOR_CHIP_ID                        (0x3008)
+#define HOST_COMMAND_TEVS_MODEL_NUMBER_0                        (0x3020)
+#define HOST_COMMAND_TEVS_MODEL_NUMBER_1                        (0x3022)
+#define HOST_COMMAND_TEVS_MODEL_NUMBER_2                        (0x3024)
 
 /* Define host command register of ISP control page */
-#define HOST_COMMAND_ISP_CTRL_PREVIEW_WIDTH                     (0x3100)
-#define HOST_COMMAND_ISP_CTRL_PREVIEW_HEIGHT                    (0x3102)
-#define HOST_COMMAND_ISP_CTRL_PREVIEW_FORMAT                    (0x3104)
-#define HOST_COMMAND_ISP_CTRL_PREVIEW_SENSOR_MODE               (0x3106)
-#define HOST_COMMAND_ISP_CTRL_PREVIEW_THROUGHPUT                (0x3108)
-#define HOST_COMMAND_ISP_CTRL_PREVIEW_MAX_FPS                   (0x310A)
-#define HOST_COMMAND_ISP_CTRL_PREVIEW_EXP_TIME_UPPER_MSB        (0x310C)
-#define HOST_COMMAND_ISP_CTRL_PREVIEW_EXP_TIME_UPPER_LSB        (0x310E)
-#define HOST_COMMAND_ISP_CTRL_PREVIEW_EXP_TIME_MAX_MSB          (0x3110)
-#define HOST_COMMAND_ISP_CTRL_PREVIEW_EXP_TIME_MAX_LSB          (0x3112)
-#define HOST_COMMAND_ISP_CTRL_PREVIEW_HINF_CTRL                 (0x3114)
-#define HOST_COMMAND_ISP_CTRL_AE_MODE                           (0x3116)
-#define HOST_COMMAND_ISP_CTRL_EXP_TIME_MSB                      (0x3118)
-#define HOST_COMMAND_ISP_CTRL_EXP_TIME_LSB                      (0x311A)
-#define HOST_COMMAND_ISP_CTRL_EXP_TIME_MAX_MSB                  (0x311C)
-#define HOST_COMMAND_ISP_CTRL_EXP_TIME_MAX_LSB                  (0x311E)
-#define HOST_COMMAND_ISP_CTRL_EXP_TIME_MIN_MSB                  (0x3120)
-#define HOST_COMMAND_ISP_CTRL_EXP_TIME_MIN_LSB                  (0x3122)
-#define HOST_COMMAND_ISP_CTRL_EXP_GAIN                          (0x3124)
-#define HOST_COMMAND_ISP_CTRL_EXP_GAIN_MAX                      (0x3126)
-#define HOST_COMMAND_ISP_CTRL_EXP_GAIN_MIN                      (0x3128)
-#define HOST_COMMAND_ISP_CTRL_CURRENT_EXP_TIME_MSB              (0x312A)
-#define HOST_COMMAND_ISP_CTRL_CURRENT_EXP_TIME_LSB              (0x312C)
-#define HOST_COMMAND_ISP_CTRL_CURRENT_EXP_GAIN                  (0x312E)
-#define HOST_COMMAND_ISP_CTRL_BACKLIGHT_COMPENSATION            (0x3130)
-#define HOST_COMMAND_ISP_CTRL_BACKLIGHT_COMPENSATION_MAX        (0x3132)
-#define HOST_COMMAND_ISP_CTRL_BACKLIGHT_COMPENSATION_MIN        (0x3134)
-#define HOST_COMMAND_ISP_CTRL_AWB_MODE                          (0x3136)
-#define HOST_COMMAND_ISP_CTRL_AWB_TEMP                          (0x3138)
-#define HOST_COMMAND_ISP_CTRL_AWB_TEMP_MAX                      (0x313A)
-#define HOST_COMMAND_ISP_CTRL_AWB_TEMP_MIN                      (0x313C)
-#define HOST_COMMAND_ISP_CTRL_BRIGHTNESS                        (0x313E)
-#define HOST_COMMAND_ISP_CTRL_BRIGHTNESS_MAX                    (0x3140)
-#define HOST_COMMAND_ISP_CTRL_BRIGHTNESS_MIN                    (0x3142)
-#define HOST_COMMAND_ISP_CTRL_CONTRAST                          (0x3144)
-#define HOST_COMMAND_ISP_CTRL_CONTRAST_MAX                      (0x3146)
-#define HOST_COMMAND_ISP_CTRL_CONTRAST_MIN                      (0x3148)
-#define HOST_COMMAND_ISP_CTRL_SATURATION                        (0x314A)
-#define HOST_COMMAND_ISP_CTRL_SATURATION_MAX                    (0x314C)
-#define HOST_COMMAND_ISP_CTRL_SATURATION_MIN                    (0x314E)
-#define HOST_COMMAND_ISP_CTRL_GAMMA                             (0x3150)
-#define HOST_COMMAND_ISP_CTRL_GAMMA_MAX                         (0x3152)
-#define HOST_COMMAND_ISP_CTRL_GAMMA_MIN                         (0x3154)
-#define HOST_COMMAND_ISP_CTRL_DENOISE                           (0x3156)
-#define HOST_COMMAND_ISP_CTRL_DENOISE_MAX                       (0x3158)
-#define HOST_COMMAND_ISP_CTRL_DENOISE_MIN                       (0x315A)
-#define HOST_COMMAND_ISP_CTRL_SHARPEN                           (0x315C)
-#define HOST_COMMAND_ISP_CTRL_SHARPEN_MAX                       (0x315E)
-#define HOST_COMMAND_ISP_CTRL_SHARPEN_MIN                       (0x3160)
-#define HOST_COMMAND_ISP_CTRL_FLIP                              (0x3162)
-#define HOST_COMMAND_ISP_CTRL_EFFECT                            (0x3164)
-#define HOST_COMMAND_ISP_CTRL_ZOOM_TYPE                         (0x3166)
-#define HOST_COMMAND_ISP_CTRL_ZOOM_TIMES                        (0x3168)
-#define HOST_COMMAND_ISP_CTRL_ZOOM_TIMES_MAX                    (0x316A)
-#define HOST_COMMAND_ISP_CTRL_ZOOM_TIMES_MIN                    (0x316C)
-#define HOST_COMMAND_ISP_CTRL_CT_X                              (0x316E)
-#define HOST_COMMAND_ISP_CTRL_CT_Y                              (0x3170)
-#define HOST_COMMAND_ISP_CTRL_CT_MAX                            (0x3172)
-#define HOST_COMMAND_ISP_CTRL_CT_MIN                            (0x3174)
-#define HOST_COMMAND_ISP_CTRL_SYSTEM_START                      (0x3176)
-#define HOST_COMMAND_ISP_CTRL_ISP_RESET                         (0x3178)
-#define HOST_COMMAND_ISP_CTRL_TRIGGER_MODE                      (0x317A)
-#define HOST_COMMAND_ISP_CTRL_FLICK_CTRL                        (0x317C)
-#define HOST_COMMAND_ISP_CTRL_MIPI_FREQ                         (0x317E)
+#define HOST_COMMAND_ISP_CTRL_PREVIEW_WIDTH 					(0x3100)
+#define HOST_COMMAND_ISP_CTRL_PREVIEW_HEIGHT 					(0x3102)
+#define HOST_COMMAND_ISP_CTRL_PREVIEW_FORMAT 					(0x3104)
+#define HOST_COMMAND_ISP_CTRL_PREVIEW_SENSOR_MODE 				(0x3106)
+#define HOST_COMMAND_ISP_CTRL_PREVIEW_THROUGHPUT 				(0x3108)
+#define HOST_COMMAND_ISP_CTRL_PREVIEW_MAX_FPS 					(0x310A)
+#define HOST_COMMAND_ISP_CTRL_PREVIEW_EXP_TIME_UPPER_MSB 		(0x310C)
+#define HOST_COMMAND_ISP_CTRL_PREVIEW_EXP_TIME_UPPER_LSB 		(0x310E)
+#define HOST_COMMAND_ISP_CTRL_PREVIEW_EXP_TIME_MAX_MSB 			(0x3110)
+#define HOST_COMMAND_ISP_CTRL_PREVIEW_EXP_TIME_MAX_LSB 			(0x3112)
+#define HOST_COMMAND_ISP_CTRL_PREVIEW_HINF_CTRL 				(0x3114)
+#define HOST_COMMAND_ISP_CTRL_AE_MODE 							(0x3116)
+#define HOST_COMMAND_ISP_CTRL_EXP_TIME_MSB 						(0x3118)
+#define HOST_COMMAND_ISP_CTRL_EXP_TIME_LSB 						(0x311A)
+#define HOST_COMMAND_ISP_CTRL_EXP_TIME_MAX_MSB 					(0x311C)
+#define HOST_COMMAND_ISP_CTRL_EXP_TIME_MAX_LSB 					(0x311E)
+#define HOST_COMMAND_ISP_CTRL_EXP_TIME_MIN_MSB 					(0x3120)
+#define HOST_COMMAND_ISP_CTRL_EXP_TIME_MIN_LSB 					(0x3122)
+#define HOST_COMMAND_ISP_CTRL_EXP_GAIN						 	(0x3124)
+#define HOST_COMMAND_ISP_CTRL_EXP_GAIN_MAX 						(0x3126)
+#define HOST_COMMAND_ISP_CTRL_EXP_GAIN_MIN 						(0x3128)
+#define HOST_COMMAND_ISP_CTRL_CURRENT_EXP_TIME_MSB 				(0x312A)
+#define HOST_COMMAND_ISP_CTRL_CURRENT_EXP_TIME_LSB 				(0x312C)
+#define HOST_COMMAND_ISP_CTRL_CURRENT_EXP_GAIN 					(0x312E)
+#define HOST_COMMAND_ISP_CTRL_BACKLIGHT_COMPENSATION 			(0x3130)
+#define HOST_COMMAND_ISP_CTRL_BACKLIGHT_COMPENSATION_MAX 		(0x3132)
+#define HOST_COMMAND_ISP_CTRL_BACKLIGHT_COMPENSATION_MIN 		(0x3134)
+#define HOST_COMMAND_ISP_CTRL_AWB_MODE 							(0x3136)
+#define HOST_COMMAND_ISP_CTRL_AWB_TEMP 							(0x3138)
+#define HOST_COMMAND_ISP_CTRL_AWB_TEMP_MAX 						(0x313A)
+#define HOST_COMMAND_ISP_CTRL_AWB_TEMP_MIN 						(0x313C)
+#define HOST_COMMAND_ISP_CTRL_BRIGHTNESS 						(0x313E)
+#define HOST_COMMAND_ISP_CTRL_BRIGHTNESS_MAX 					(0x3140)
+#define HOST_COMMAND_ISP_CTRL_BRIGHTNESS_MIN 					(0x3142)
+#define HOST_COMMAND_ISP_CTRL_CONTRAST 							(0x3144)
+#define HOST_COMMAND_ISP_CTRL_CONTRAST_MAX 						(0x3146)
+#define HOST_COMMAND_ISP_CTRL_CONTRAST_MIN 						(0x3148)
+#define HOST_COMMAND_ISP_CTRL_SATURATION 						(0x314A)
+#define HOST_COMMAND_ISP_CTRL_SATURATION_MAX 					(0x314C)
+#define HOST_COMMAND_ISP_CTRL_SATURATION_MIN 					(0x314E)
+#define HOST_COMMAND_ISP_CTRL_GAMMA 							(0x3150)
+#define HOST_COMMAND_ISP_CTRL_GAMMA_MAX 						(0x3152)
+#define HOST_COMMAND_ISP_CTRL_GAMMA_MIN 						(0x3154)
+#define HOST_COMMAND_ISP_CTRL_DENOISE 							(0x3156)
+#define HOST_COMMAND_ISP_CTRL_DENOISE_MAX 						(0x3158)
+#define HOST_COMMAND_ISP_CTRL_DENOISE_MIN 						(0x315A)
+#define HOST_COMMAND_ISP_CTRL_SHARPEN 							(0x315C)
+#define HOST_COMMAND_ISP_CTRL_SHARPEN_MAX 						(0x315E)
+#define HOST_COMMAND_ISP_CTRL_SHARPEN_MIN 						(0x3160)
+#define HOST_COMMAND_ISP_CTRL_FLIP 								(0x3162)
+#define HOST_COMMAND_ISP_CTRL_EFFECT 							(0x3164)
+#define HOST_COMMAND_ISP_CTRL_ZOOM_TYPE 						(0x3166)
+#define HOST_COMMAND_ISP_CTRL_ZOOM_TIMES 						(0x3168)
+#define HOST_COMMAND_ISP_CTRL_ZOOM_TIMES_MAX 					(0x316A)
+#define HOST_COMMAND_ISP_CTRL_ZOOM_TIMES_MIN 					(0x316C)
+#define HOST_COMMAND_ISP_CTRL_CT_X 								(0x316E)
+#define HOST_COMMAND_ISP_CTRL_CT_Y 								(0x3170)
+#define HOST_COMMAND_ISP_CTRL_CT_MAX 							(0x3172)
+#define HOST_COMMAND_ISP_CTRL_CT_MIN 							(0x3174)
+#define HOST_COMMAND_ISP_CTRL_SYSTEM_START 						(0x3176)
+#define HOST_COMMAND_ISP_CTRL_ISP_RESET 						(0x3178)
+#define HOST_COMMAND_ISP_CTRL_TRIGGER_MODE 						(0x317A)
+#define HOST_COMMAND_ISP_CTRL_FLICK_CTRL					 	(0x317C)
+#define HOST_COMMAND_ISP_CTRL_MIPI_FREQ 						(0x317E)
 #define HOST_COMMAND_ISP_CTRL_JPEG_QUAL							(0x3180)
 #define HOST_COMMAND_ISP_CTRL_PREVIEW_MIPI_CTRL 				(0x3182)
 
 /* Define host command register of ISP bootdata page */
-#define HOST_COMMAND_ISP_BOOTDATA_1                             (0x4000)
-#define HOST_COMMAND_ISP_BOOTDATA_2                             (0x4002)
-#define HOST_COMMAND_ISP_BOOTDATA_3                             (0x4004)
-#define HOST_COMMAND_ISP_BOOTDATA_4                             (0x4006)
-#define HOST_COMMAND_ISP_BOOTDATA_5                             (0x4008)
-#define HOST_COMMAND_ISP_BOOTDATA_6                             (0x400A)
-#define HOST_COMMAND_ISP_BOOTDATA_7                             (0x400C)
-#define HOST_COMMAND_ISP_BOOTDATA_8                             (0x400E)
-#define HOST_COMMAND_ISP_BOOTDATA_9                             (0x4010)
-#define HOST_COMMAND_ISP_BOOTDATA_10                            (0x4012)
-#define HOST_COMMAND_ISP_BOOTDATA_11                            (0x4014)
-#define HOST_COMMAND_ISP_BOOTDATA_12                            (0x4016)
-#define HOST_COMMAND_ISP_BOOTDATA_13                            (0x4018)
-#define HOST_COMMAND_ISP_BOOTDATA_14                            (0x401A)
-#define HOST_COMMAND_ISP_BOOTDATA_15                            (0x401C)
-#define HOST_COMMAND_ISP_BOOTDATA_16                            (0x401E)
-#define HOST_COMMAND_ISP_BOOTDATA_17                            (0x4020)
-#define HOST_COMMAND_ISP_BOOTDATA_18                            (0x4022)
-#define HOST_COMMAND_ISP_BOOTDATA_19                            (0x4024)
-#define HOST_COMMAND_ISP_BOOTDATA_20                            (0x4026)
-#define HOST_COMMAND_ISP_BOOTDATA_21                            (0x4028)
-#define HOST_COMMAND_ISP_BOOTDATA_22                            (0x402A)
-#define HOST_COMMAND_ISP_BOOTDATA_23                            (0x402C)
-#define HOST_COMMAND_ISP_BOOTDATA_24                            (0x402E)
-#define HOST_COMMAND_ISP_BOOTDATA_25                            (0x4030)
-#define HOST_COMMAND_ISP_BOOTDATA_26                            (0x4032)
-#define HOST_COMMAND_ISP_BOOTDATA_27                            (0x4034)
-#define HOST_COMMAND_ISP_BOOTDATA_28                            (0x4036)
-#define HOST_COMMAND_ISP_BOOTDATA_29                            (0x4038)
-#define HOST_COMMAND_ISP_BOOTDATA_30                            (0x403A)
-#define HOST_COMMAND_ISP_BOOTDATA_31                            (0x403C)
-#define HOST_COMMAND_ISP_BOOTDATA_32                            (0x403E)
-#define HOST_COMMAND_ISP_BOOTDATA_33                            (0x4040)
-#define HOST_COMMAND_ISP_BOOTDATA_34                            (0x4042)
-#define HOST_COMMAND_ISP_BOOTDATA_35                            (0x4044)
-#define HOST_COMMAND_ISP_BOOTDATA_36                            (0x4046)
-#define HOST_COMMAND_ISP_BOOTDATA_37                            (0x4048)
-#define HOST_COMMAND_ISP_BOOTDATA_38                            (0x404A)
-#define HOST_COMMAND_ISP_BOOTDATA_39                            (0x404C)
-#define HOST_COMMAND_ISP_BOOTDATA_40                            (0x404E)
-#define HOST_COMMAND_ISP_BOOTDATA_41                            (0x4050)
-#define HOST_COMMAND_ISP_BOOTDATA_42                            (0x4052)
-#define HOST_COMMAND_ISP_BOOTDATA_43                            (0x4054)
-#define HOST_COMMAND_ISP_BOOTDATA_44                            (0x4056)
-#define HOST_COMMAND_ISP_BOOTDATA_45                            (0x4058)
-#define HOST_COMMAND_ISP_BOOTDATA_46                            (0x405A)
-#define HOST_COMMAND_ISP_BOOTDATA_47                            (0x405C)
-#define HOST_COMMAND_ISP_BOOTDATA_48                            (0x405E)
-#define HOST_COMMAND_ISP_BOOTDATA_49                            (0x4060)
-#define HOST_COMMAND_ISP_BOOTDATA_50                            (0x4062)
-#define HOST_COMMAND_ISP_BOOTDATA_51                            (0x4064)
-#define HOST_COMMAND_ISP_BOOTDATA_52                            (0x4066)
-#define HOST_COMMAND_ISP_BOOTDATA_53                            (0x4068)
-#define HOST_COMMAND_ISP_BOOTDATA_54                            (0x406A)
-#define HOST_COMMAND_ISP_BOOTDATA_55                            (0x406C)
-#define HOST_COMMAND_ISP_BOOTDATA_56                            (0x406E)
-#define HOST_COMMAND_ISP_BOOTDATA_57                            (0x4070)
-#define HOST_COMMAND_ISP_BOOTDATA_58                            (0x4072)
-#define HOST_COMMAND_ISP_BOOTDATA_59                            (0x4074)
-#define HOST_COMMAND_ISP_BOOTDATA_60                            (0x4076)
-#define HOST_COMMAND_ISP_BOOTDATA_61                            (0x4078)
-#define HOST_COMMAND_ISP_BOOTDATA_62                            (0x407A)
-#define HOST_COMMAND_ISP_BOOTDATA_63                            (0x407C)
+#define HOST_COMMAND_ISP_BOOTDATA_1								(0x4000)
+#define HOST_COMMAND_ISP_BOOTDATA_2								(0x4002)
+#define HOST_COMMAND_ISP_BOOTDATA_3								(0x4004)
+#define HOST_COMMAND_ISP_BOOTDATA_4								(0x4006)
+#define HOST_COMMAND_ISP_BOOTDATA_5								(0x4008)
+#define HOST_COMMAND_ISP_BOOTDATA_6								(0x400A)
+#define HOST_COMMAND_ISP_BOOTDATA_7								(0x400C)
+#define HOST_COMMAND_ISP_BOOTDATA_8								(0x400E)
+#define HOST_COMMAND_ISP_BOOTDATA_9								(0x4010)
+#define HOST_COMMAND_ISP_BOOTDATA_10							(0x4012)
+#define HOST_COMMAND_ISP_BOOTDATA_11							(0x4014)
+#define HOST_COMMAND_ISP_BOOTDATA_12							(0x4016)
+#define HOST_COMMAND_ISP_BOOTDATA_13							(0x4018)
+#define HOST_COMMAND_ISP_BOOTDATA_14							(0x401A)
+#define HOST_COMMAND_ISP_BOOTDATA_15							(0x401C)
+#define HOST_COMMAND_ISP_BOOTDATA_16							(0x401E)
+#define HOST_COMMAND_ISP_BOOTDATA_17							(0x4020)
+#define HOST_COMMAND_ISP_BOOTDATA_18							(0x4022)
+#define HOST_COMMAND_ISP_BOOTDATA_19							(0x4024)
+#define HOST_COMMAND_ISP_BOOTDATA_20							(0x4026)
+#define HOST_COMMAND_ISP_BOOTDATA_21							(0x4028)
+#define HOST_COMMAND_ISP_BOOTDATA_22							(0x402A)
+#define HOST_COMMAND_ISP_BOOTDATA_23							(0x402C)
+#define HOST_COMMAND_ISP_BOOTDATA_24							(0x402E)
+#define HOST_COMMAND_ISP_BOOTDATA_25							(0x4030)
+#define HOST_COMMAND_ISP_BOOTDATA_26							(0x4032)
+#define HOST_COMMAND_ISP_BOOTDATA_27							(0x4034)
+#define HOST_COMMAND_ISP_BOOTDATA_28							(0x4036)
+#define HOST_COMMAND_ISP_BOOTDATA_29							(0x4038)
+#define HOST_COMMAND_ISP_BOOTDATA_30							(0x403A)
+#define HOST_COMMAND_ISP_BOOTDATA_31							(0x403C)
+#define HOST_COMMAND_ISP_BOOTDATA_32							(0x403E)
+#define HOST_COMMAND_ISP_BOOTDATA_33							(0x4040)
+#define HOST_COMMAND_ISP_BOOTDATA_34							(0x4042)
+#define HOST_COMMAND_ISP_BOOTDATA_35							(0x4044)
+#define HOST_COMMAND_ISP_BOOTDATA_36							(0x4046)
+#define HOST_COMMAND_ISP_BOOTDATA_37							(0x4048)
+#define HOST_COMMAND_ISP_BOOTDATA_38							(0x404A)
+#define HOST_COMMAND_ISP_BOOTDATA_39							(0x404C)
+#define HOST_COMMAND_ISP_BOOTDATA_40							(0x404E)
+#define HOST_COMMAND_ISP_BOOTDATA_41							(0x4050)
+#define HOST_COMMAND_ISP_BOOTDATA_42							(0x4052)
+#define HOST_COMMAND_ISP_BOOTDATA_43							(0x4054)
+#define HOST_COMMAND_ISP_BOOTDATA_44							(0x4056)
+#define HOST_COMMAND_ISP_BOOTDATA_45							(0x4058)
+#define HOST_COMMAND_ISP_BOOTDATA_46							(0x405A)
+#define HOST_COMMAND_ISP_BOOTDATA_47							(0x405C)
+#define HOST_COMMAND_ISP_BOOTDATA_48							(0x405E)
+#define HOST_COMMAND_ISP_BOOTDATA_49							(0x4060)
+#define HOST_COMMAND_ISP_BOOTDATA_50							(0x4062)
+#define HOST_COMMAND_ISP_BOOTDATA_51							(0x4064)
+#define HOST_COMMAND_ISP_BOOTDATA_52							(0x4066)
+#define HOST_COMMAND_ISP_BOOTDATA_53							(0x4068)
+#define HOST_COMMAND_ISP_BOOTDATA_54							(0x406A)
+#define HOST_COMMAND_ISP_BOOTDATA_55							(0x406C)
+#define HOST_COMMAND_ISP_BOOTDATA_56							(0x406E)
+#define HOST_COMMAND_ISP_BOOTDATA_57							(0x4070)
+#define HOST_COMMAND_ISP_BOOTDATA_58							(0x4072)
+#define HOST_COMMAND_ISP_BOOTDATA_59							(0x4074)
+#define HOST_COMMAND_ISP_BOOTDATA_60							(0x4076)
+#define HOST_COMMAND_ISP_BOOTDATA_61							(0x4078)
+#define HOST_COMMAND_ISP_BOOTDATA_62							(0x407A)
+#define HOST_COMMAND_ISP_BOOTDATA_63							(0x407C)
 
 /* Define special method for controlling ISP with I2C */
-#define HOST_COMMAND_ISP_CTRL_I2C_ADDR                          (0xF000)
-#define HOST_COMMAND_ISP_CTRL_I2C_DATA                          (0xF002)
+#define HOST_COMMAND_ISP_CTRL_I2C_ADDR							(0xF000)
+#define HOST_COMMAND_ISP_CTRL_I2C_DATA							(0xF002)
 
 #define TEVS_BRIGHTNESS 						HOST_COMMAND_ISP_CTRL_BRIGHTNESS
 #define TEVS_BRIGHTNESS_MAX 					HOST_COMMAND_ISP_CTRL_BRIGHTNESS_MAX
@@ -335,6 +342,7 @@ struct tevs {
 
 	struct regulator_bulk_data supplies[TEVS_NUM_SUPPLIES];
 
+	u16 chip_id;
 	int data_lanes;
 	int continuous_clock;
 	int data_frequency;
@@ -344,6 +352,7 @@ struct tevs {
 	int trigger_mode;
 	char *sensor_name;
 	int vc_id;
+	unsigned int fps;
 
 	/* V4L2 Controls */
 	struct v4l2_ctrl_handler ctrls;
@@ -376,8 +385,6 @@ struct tevs {
 
 	/* Streaming on/off */
 	bool streaming;
-	/* BSL mode flag */
-	bool bsl_check;
 };
 
 static const struct regmap_config tevs_regmap_config = {
@@ -388,13 +395,12 @@ static const struct regmap_config tevs_regmap_config = {
 
 static int tevs_i2c_read(struct tevs *tevs, u16 reg, u8 *val, u16 size)
 {
-	struct i2c_client *client = v4l2_get_subdevdata(&tevs->v4l2_subdev);
 	int ret;
 
 	ret = regmap_bulk_read(tevs->regmap, reg, val, size);
 	if (ret < 0) {
-		dev_err(&client->dev,
-			"failed to read from register: ret=%d, reg=0x%x\n", ret,
+		dev_err(regmap_get_device(tevs->regmap),
+			"Failed to read from register: ret=%d, reg=0x%x\n", ret,
 			reg);
 		return ret;
 	}
@@ -404,7 +410,6 @@ static int tevs_i2c_read(struct tevs *tevs, u16 reg, u8 *val, u16 size)
 
 static int tevs_i2c_read_16b(struct tevs *tevs, u16 reg, u16 *value)
 {
-	struct i2c_client *client = v4l2_get_subdevdata(&tevs->v4l2_subdev);
 	u8 v[2] = { 0 };
 	int ret;
 
@@ -412,21 +417,20 @@ static int tevs_i2c_read_16b(struct tevs *tevs, u16 reg, u16 *value)
 		return ret;
 
 	*value = (v[0] << 8) | v[1];
-	dev_dbg(&client->dev, "%s() read reg 0x%x, value 0x%x\n", __func__, reg,
-		*value);
+	dev_dbg(regmap_get_device(tevs->regmap),
+		"%s() read reg 0x%x, value 0x%x\n", __func__, reg, *value);
 
 	return 0;
 }
 
 static int tevs_i2c_write(struct tevs *tevs, u16 reg, u8 *val, u16 size)
 {
-	struct i2c_client *client = v4l2_get_subdevdata(&tevs->v4l2_subdev);
 	int ret;
 
 	ret = regmap_bulk_write(tevs->regmap, reg, val, size);
 	if (ret < 0) {
-		dev_err(&client->dev,
-			"failed to write to register: ret=%d reg=0x%x\n", ret,
+		dev_err(regmap_get_device(tevs->regmap),
+			"Failed to write to register: ret=%d reg=0x%x\n", ret,
 			reg);
 		return ret;
 	}
@@ -436,7 +440,6 @@ static int tevs_i2c_write(struct tevs *tevs, u16 reg, u8 *val, u16 size)
 
 static int tevs_i2c_write_16b(struct tevs *tevs, u16 reg, u16 val)
 {
-	struct i2c_client *client = v4l2_get_subdevdata(&tevs->v4l2_subdev);
 	int ret;
 	u8 data[2];
 	data[0] = val >> 8;
@@ -445,8 +448,8 @@ static int tevs_i2c_write_16b(struct tevs *tevs, u16 reg, u16 val)
 	if ((ret = regmap_bulk_write(tevs->regmap, reg, data, 2)) != 0)
 		return ret;
 
-	dev_dbg(&client->dev, "%s() write reg 0x%x, value 0x%x\n", __func__,
-		reg, val);
+	dev_dbg(regmap_get_device(tevs->regmap),
+		"%s() write reg 0x%x, value 0x%x\n", __func__, reg, val);
 
 	return 0;
 }
@@ -476,7 +479,7 @@ static int tevs_check_version(struct tevs *tevs)
 		dev_err(&client->dev, "can't check version\n");
 		return ret;
 	}
-	dev_info(&client->dev, "version:%d.%d.%d.%d\n", version[0], version[1],
+	dev_info(&client->dev, "Version:%d.%d.%d.%d\n", version[0], version[1],
 		 version[2], version[3]);
 
 	return 0;
@@ -501,7 +504,7 @@ static int tevs_load_header_info(struct tevs *tevs)
 			      sizeof(struct header_info));
 
 		dev_info(&client->dev,
-			 "product:%s, header ver:%d, MIPI rate:%d\n",
+			 "Product:%s, HeaderVer:%d, MIPI_Rate:%d\n",
 			 header->product_name, header->header_version,
 			 header->mipi_datarate);
 
@@ -516,6 +519,23 @@ static int tevs_load_header_info(struct tevs *tevs)
 			header_ver);
 		return -EINVAL;
 	}
+}
+
+static int tevs_get_chip_id(struct tevs *tevs)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(&tevs->v4l2_subdev);
+	u16 val;
+	int ret =
+		tevs_i2c_read_16b(tevs, HOST_COMMAND_TEVS_SENSOR_CHIP_ID, &val);
+
+	if (ret < 0) {
+		dev_err(&client->dev, "Can't get chip ID. ret = %d.\n", ret);
+		return ret;
+	}
+
+	tevs->chip_id = val;
+	dev_info(&client->dev, "Chip ID: 0x%.4X\n", tevs->chip_id);
+	return 0;
 }
 
 static int tevs_standby(struct tevs *tevs, int enable)
@@ -574,39 +594,31 @@ static int tevs_check_boot_state(struct tevs *tevs)
 				  &boot_state);
 		if (boot_state == 0x08)
 			break;
-		dev_dbg(&client->dev, "tevs bootup state: 0x%04X\n", boot_state);
+		dev_dbg(&client->dev, "bootup state: 0x%04X\n", boot_state);
 		if (++timeout >= 20) {
-			dev_err(&client->dev,
-				"tevs bootup timeout: state: 0x%04X\n",
+			dev_err(&client->dev, "bootup timeout: state: 0x%04X\n",
 				boot_state);
-			ret = -EINVAL;
+			ret = -EBUSY;
 		}
-		msleep(20);
+		msleep(50);
 	}
 
 	return ret;
 }
 
-/*
- * Subdev Operations
- */
-
 static int tevs_get_frame_interval(struct v4l2_subdev *sub_dev,
 				   struct v4l2_subdev_frame_interval *fi)
 {
 	struct tevs *tevs = container_of(sub_dev, struct tevs, v4l2_subdev);
-	u32 max_fps;
-	dev_dbg(sub_dev->dev, "%s()\n", __func__);
 
 	if (fi->pad != 0)
 		return -EINVAL;
 
-	max_fps = tevs_sensor_table[tevs->selected_sensor]
-			  .res_list[tevs->selected_mode]
-			  .framerates;
+	dev_dbg(sub_dev->dev, "%s()\n", __func__);
 
 	fi->interval.numerator = 1;
-	fi->interval.denominator = max_fps;
+	fi->interval.denominator = tevs->fps;
+	dev_dbg(sub_dev->dev, "fps = %d\n", tevs->fps);
 
 	return 0;
 }
@@ -615,18 +627,39 @@ static int tevs_set_frame_interval(struct v4l2_subdev *sub_dev,
 				   struct v4l2_subdev_frame_interval *fi)
 {
 	struct tevs *tevs = container_of(sub_dev, struct tevs, v4l2_subdev);
-	u32 max_fps;
-	dev_dbg(sub_dev->dev, "%s()\n", __func__);
+	unsigned int max_fps, min_fps;
+	unsigned int fps =
+		fi->interval.numerator ?
+			fi->interval.denominator / fi->interval.numerator :
+			fi->interval.denominator;
 
 	if (fi->pad != 0)
 		return -EINVAL;
 
+	dev_dbg(sub_dev->dev, "%s()\n", __func__);
+
 	max_fps = tevs_sensor_table[tevs->selected_sensor]
 			  .res_list[tevs->selected_mode]
-			  .framerates;
+			  .framerates[0];
+	min_fps =
+		tevs_sensor_table[tevs->selected_sensor]
+			.res_list[tevs->selected_mode]
+			.framerates
+				[ARRAY_SIZE(
+					 tevs_sensor_table[tevs->selected_sensor]
+						 .res_list[tevs->selected_mode]
+						 .framerates) -
+				 1];
+
+	if (fps > max_fps)
+		fps = max_fps;
+	else if (fps < min_fps)
+		fps = min_fps;
 
 	fi->interval.numerator = 1;
-	fi->interval.denominator = max_fps;
+	fi->interval.denominator = fps;
+	tevs->fps = fps;
+	dev_dbg(sub_dev->dev, "fps = %d\n", fps);
 
 	return 0;
 }
@@ -645,22 +678,22 @@ static int tevs_start_streaming(struct tevs *tevs)
 	if (!(tevs->hw_reset_mode | tevs_check_trigger_mode(tevs)))
 		ret = tevs_standby(tevs, 0);
 	if (ret == 0) {
-		int fps = tevs_sensor_table[tevs->selected_sensor]
-				  .res_list[tevs->selected_mode]
-				  .framerates;
 		dev_dbg(&client->dev, "%s() width=%d, height=%d, fps=%d\n", __func__,
 			tevs_sensor_table[tevs->selected_sensor]
 				.res_list[tevs->selected_mode]
 				.width,
 			tevs_sensor_table[tevs->selected_sensor]
 				.res_list[tevs->selected_mode]
-				.height, fps);
+				.height, tevs->fps);
 		tevs_i2c_write_16b(tevs, HOST_COMMAND_ISP_CTRL_PREVIEW_FORMAT,
 				   TEVS_IMG_FORMAT_UYVY);
 		tevs_i2c_write_16b(tevs,
 				   HOST_COMMAND_ISP_CTRL_PREVIEW_HINF_CTRL,
 				   0x10 | (tevs->continuous_clock << 5) |
 					   (tevs->data_lanes));
+		tevs_i2c_write_16b(tevs,
+				   HOST_COMMAND_ISP_CTRL_PREVIEW_MIPI_CTRL,
+				   tevs->vc_id);
 		tevs_i2c_write_16b(tevs,
 				   HOST_COMMAND_ISP_CTRL_PREVIEW_SENSOR_MODE,
 				   tevs_sensor_table[tevs->selected_sensor]
@@ -675,12 +708,20 @@ static int tevs_start_streaming(struct tevs *tevs)
 					   .res_list[tevs->selected_mode]
 					   .height);
 		tevs_i2c_write_16b(tevs, HOST_COMMAND_ISP_CTRL_PREVIEW_MAX_FPS,
-				   fps);
+				   tevs->fps);
 		if (tevs->max_fps)
-			tevs->max_fps->cur.val = fps;
+			tevs->max_fps->cur.val = tevs->fps;
 		tevs_i2c_read(tevs, TEVS_AE_MANUAL_EXP_TIME, exp, 4);
 		tevs->exp_time->cur.val = be32_to_cpup((__be32 *)exp) &
 					  TEVS_AE_MANUAL_EXP_TIME_MASK;
+		tevs_i2c_read(tevs, TEVS_AE_AUTO_EXP_TIME_UPPER, exp, 4);
+		tevs->ae_exp_upper->cur.val =
+				   be32_to_cpup((__be32 *)exp) &
+				   TEVS_AE_MANUAL_EXP_TIME_MASK;
+		tevs_i2c_read(tevs, TEVS_AE_AUTO_EXP_TIME_MAX, exp, 4);
+		tevs->ae_exp_max->cur.val =
+				   be32_to_cpup((__be32 *)exp) &
+				   TEVS_AE_MANUAL_EXP_TIME_MASK;
 	}
 
 	/* Apply customized values from user */
@@ -746,9 +787,10 @@ static int tevs_enum_mbus_code(struct v4l2_subdev *sub_dev,
 			       struct v4l2_subdev_state *sub_state,
 			       struct v4l2_subdev_mbus_code_enum *code)
 {
-	dev_dbg(sub_dev->dev, "%s() index [%u]\n", __func__, code->index);
 	if (code->pad || code->index > 0)
 		return -EINVAL;
+
+	dev_dbg(sub_dev->dev, "%s() index [%u]\n", __func__, code->index);
 
 	code->code = MEDIA_BUS_FMT_UYVY8_1X16;
 
@@ -767,11 +809,13 @@ static int tevs_get_fmt(struct v4l2_subdev *sub_dev,
 		return -EINVAL;
 
 	dev_dbg(sub_dev->dev, "%s() which [%d]\n", __func__, format->which);
+
 	if (format->which == V4L2_SUBDEV_FORMAT_TRY)
 		fmt = v4l2_subdev_get_try_format(sub_dev, sub_state,
 						 format->pad);
 	else
 		fmt = &tevs->fmt;
+
 	dev_dbg(sub_dev->dev,
 		"%s() w [%u] h [%u] code [0x%04x] colorspace [%u]\n", __func__,
 		fmt->width, fmt->height, fmt->code, fmt->colorspace);
@@ -790,10 +834,10 @@ static int tevs_set_fmt(struct v4l2_subdev *sub_dev,
 	struct tevs *tevs = to_tevs(sub_dev);
 	int i;
 
-	dev_dbg(sub_dev->dev, "%s()\n", __func__);
-
 	if (format->pad != 0)
 		return -EINVAL;
+
+	dev_dbg(sub_dev->dev, "%s()\n", __func__);
 
 	for (i = 0; i < tevs_sensor_table[tevs->selected_sensor].res_list_size;
 	     i++) {
@@ -822,6 +866,7 @@ static int tevs_set_fmt(struct v4l2_subdev *sub_dev,
 	mbus_fmt->ycbcr_enc = V4L2_MAP_YCBCR_ENC_DEFAULT(mbus_fmt->colorspace);
 	mbus_fmt->quantization = V4L2_QUANTIZATION_FULL_RANGE;
 	mbus_fmt->xfer_func = V4L2_MAP_XFER_FUNC_DEFAULT(mbus_fmt->colorspace);
+	memset(mbus_fmt->reserved, 0, sizeof(mbus_fmt->reserved));
 
 	if (format->which == V4L2_SUBDEV_FORMAT_TRY)
 		fmt = v4l2_subdev_get_try_format(sub_dev, sub_state, 0);
@@ -867,12 +912,12 @@ static int tevs_enum_frame_size(struct v4l2_subdev *sub_dev,
 {
 	struct tevs *tevs = to_tevs(sub_dev);
 
-	dev_dbg(sub_dev->dev, "%s(), index [%u]\n", __func__, fse->index);
-
 	if ((fse->pad != 0) ||
 	    (fse->index >=
 	     tevs_sensor_table[tevs->selected_sensor].res_list_size))
 		return -EINVAL;
+
+	dev_dbg(sub_dev->dev, "%s(), index [%u]\n", __func__, fse->index);
 
 	fse->min_width = fse->max_width =
 		tevs_sensor_table[tevs->selected_sensor]
@@ -882,6 +927,7 @@ static int tevs_enum_frame_size(struct v4l2_subdev *sub_dev,
 		tevs_sensor_table[tevs->selected_sensor]
 			.res_list[fse->index]
 			.height;
+
 	dev_dbg(sub_dev->dev, "%s(), w [%u] h [%u]\n", __func__, fse->min_width,
 		fse->min_height);
 
@@ -895,10 +941,10 @@ static int tevs_enum_frame_interval(struct v4l2_subdev *sub_dev,
 	struct tevs *tevs = to_tevs(sub_dev);
 	int i;
 
-	dev_dbg(sub_dev->dev, "%s() index [%u]\n", __func__, fie->index);
-
 	if ((fie->pad != 0) || (fie->index != 0))
 		return -EINVAL;
+
+	dev_dbg(sub_dev->dev, "%s() index [%u]\n", __func__, fie->index);
 
 	fie->interval.numerator = 1;
 
@@ -913,10 +959,11 @@ static int tevs_enum_frame_interval(struct v4l2_subdev *sub_dev,
 			fie->interval.denominator =
 				tevs_sensor_table[tevs->selected_sensor]
 					.res_list[i]
-					.framerates;
+					.framerates[fie->index];
 			break;
 		}
 	}
+
 	dev_dbg(sub_dev->dev, "%s() frame rate [%u]\n", __func__,
 		fie->interval.denominator);
 
@@ -1218,26 +1265,23 @@ static int tevs_set_zoom_target(struct tevs *tevs, s32 value)
 static int tevs_set_bsl_mode(struct tevs *tevs, s32 mode)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(&tevs->v4l2_subdev);
-	u8 val;
-	u8 bootcmd[6] = { 0x00, 0x12, 0x3A, 0x61, 0x44, 0xDE };
-	u8 startup[6] = { 0x00, 0x40, 0xE2, 0x51, 0x21, 0x5B };
+	u16 val;
 	u16 data_freq_tmp;
 	dev_dbg(&client->dev, "%s(): set bls mode: %d", __func__, mode);
 
-	if (tevs->bsl_check == mode)
-		return 0;
-
 	switch (mode) {
 	case TEVS_BSL_MODE_NORMAL_IDX:
-		tevs_i2c_write(tevs, 0x8001, startup, 6);
-		tevs_i2c_read(tevs, 0x8001, &val, 1);
+		gpiod_set_value_cansleep(tevs->reset_gpio, 0);
+		usleep_range(9000, 10000);
+		gpiod_set_value_cansleep(tevs->reset_gpio, 1);
+		usleep_range(9000, 10000);
 
 		msleep(TEVS_BOOT_TIME);
 
 		if (tevs_check_boot_state(tevs) != 0) {
 			dev_err(&client->dev,
-				"check tevs bootup status failed\n");
-			return -EINVAL;
+				"check tevs bootup status failed before change data frequency\n");
+			return -ENODEV;
 		}
 
 		if (tevs->data_frequency != 0) {
@@ -1250,8 +1294,8 @@ static int tevs_set_bsl_mode(struct tevs *tevs, s32 mode)
 				msleep(TEVS_BOOT_TIME);
 				if (tevs_check_boot_state(tevs) != 0) {
 					dev_err(&client->dev,
-						"check tevs bootup status failed\n");
-					return -EINVAL;
+						"check tevs bootup status failed after change data frequency\n");
+					return -ENODEV;
 				}
 			}
 		}
@@ -1277,7 +1321,8 @@ static int tevs_set_bsl_mode(struct tevs *tevs, s32 mode)
 			val |= 0x380;
 			if (tevs_i2c_write_16b(tevs, TEVS_TRIGGER_MODE, val) !=
 			    0) {
-				dev_err(&client->dev, "set trigger mode failed\n");
+				dev_err(&client->dev,
+					"set trigger mode failed\n");
 				return -EINVAL;
 			}
 		}
@@ -1301,16 +1346,13 @@ static int tevs_set_bsl_mode(struct tevs *tevs, s32 mode)
 		usleep_range(9000, 10000);
 		gpiod_set_value_cansleep(tevs->standby_gpio, 0);
 		msleep(100);
-		tevs_i2c_write(tevs, 0x8001, bootcmd, 6);
-		tevs_i2c_read(tevs, 0x8001, &val, 1);
 		break;
 	default:
 		dev_err(&client->dev, "%s(): set err bls mode: %d", __func__,
 			mode);
-		return -EINVAL;
+		break;
 	}
 
-	tevs->bsl_check = mode;
 	return 0;
 }
 
@@ -1593,7 +1635,7 @@ static int tevs_ctrls_init(struct tevs *tevs)
 	};
 
 	ctrl_hdlr = &tevs->ctrls;
-	ret = v4l2_ctrl_handler_init(ctrl_hdlr, 29);
+	ret = v4l2_ctrl_handler_init(ctrl_hdlr, 26);
 	if (ret)
 		return ret;
 
@@ -1695,7 +1737,7 @@ static int tevs_ctrls_init(struct tevs *tevs)
 	tevs->hflip = v4l2_ctrl_new_std(ctrl_hdlr, &tevs_ctrl_ops,
 					V4L2_CID_HFLIP, 0x0, 0x1, 1, ctrl_def);
 
-	ctrl_def = val & TEVS_ORIENTATION_VFLIP;
+	ctrl_def = (val & TEVS_ORIENTATION_VFLIP) >> TEVS_ORIENTATION_VFLIP_BIT;
 	tevs->vflip = v4l2_ctrl_new_std(ctrl_hdlr, &tevs_ctrl_ops,
 					V4L2_CID_VFLIP, 0x0, 0x1, 1, ctrl_def);
 
@@ -1858,21 +1900,20 @@ static int tevs_ctrls_init(struct tevs *tevs)
 
 	/* By default, link_freq and pixel_rate is read only */
 	link_freq[0] = (u64)(tevs->data_frequency >> 1) * 1000000ULL;
-	tevs->link_freq = v4l2_ctrl_new_int_menu(
-		ctrl_hdlr, &tevs_ctrl_ops, V4L2_CID_LINK_FREQ,
-		ARRAY_SIZE(link_freq) - 1, 0, link_freq);
+	tevs->link_freq = v4l2_ctrl_new_int_menu(ctrl_hdlr, &tevs_ctrl_ops,
+						 V4L2_CID_LINK_FREQ,
+						 ARRAY_SIZE(link_freq) - 1, 0,
+						 link_freq);
 	tevs->link_freq->flags |= V4L2_CTRL_FLAG_READ_ONLY;
 
 	/* link_freq = (pixel_rate * bpp) / (2 * data_lanes) */
 	pixel_rate[0] = link_freq[0] * (2 * tevs->data_lanes) / 16;
-	tevs->pixel_rate =
-		v4l2_ctrl_new_std(ctrl_hdlr, &tevs_ctrl_ops,
-				  V4L2_CID_PIXEL_RATE, pixel_rate[0],
-				  pixel_rate[0], 1, pixel_rate[0]);
+	tevs->pixel_rate = v4l2_ctrl_new_std(ctrl_hdlr, &tevs_ctrl_ops,
+					     V4L2_CID_PIXEL_RATE, pixel_rate[0],
+					     pixel_rate[0], 1, pixel_rate[0]);
 	tevs->pixel_rate->flags |= V4L2_CTRL_FLAG_READ_ONLY;
 
 	tevs->bsl = v4l2_ctrl_new_custom(ctrl_hdlr, &tevs_bsl_mode, NULL);
-	tevs->bsl_check = 0;
 
 	tevs->max_fps = v4l2_ctrl_new_custom(ctrl_hdlr, &tevs_max_fps, NULL);
 	ret = tevs_i2c_read_16b(tevs, TEVS_MAX_FPS, &val);
@@ -1954,36 +1995,6 @@ static void tevs_ctrls_free(struct tevs *tevs)
 	v4l2_ctrl_handler_free(&tevs->ctrls);
 }
 
-static const struct v4l2_subdev_core_ops tevs_v4l2_subdev_core_ops = {
-	.subscribe_event = v4l2_ctrl_subdev_subscribe_event,
-	.unsubscribe_event = v4l2_event_subdev_unsubscribe,
-};
-
-static const struct v4l2_subdev_video_ops tevs_v4l2_subdev_video_ops = {
-	.g_frame_interval = tevs_get_frame_interval,
-	.s_frame_interval = tevs_set_frame_interval,
-	.s_stream = tevs_set_stream,
-};
-
-static const struct v4l2_subdev_pad_ops tevs_v4l2_subdev_pad_ops = {
-	.enum_mbus_code = tevs_enum_mbus_code,
-	.get_fmt = tevs_get_fmt,
-	.set_fmt = tevs_set_fmt,
-	.get_selection = tevs_get_selection,
-	.enum_frame_size = tevs_enum_frame_size,
-	.enum_frame_interval = tevs_enum_frame_interval,
-};
-
-static const struct v4l2_subdev_ops tevs_subdev_ops = {
-	.core = &tevs_v4l2_subdev_core_ops,
-	.video = &tevs_v4l2_subdev_video_ops,
-	.pad = &tevs_v4l2_subdev_pad_ops,
-};
-
-static const struct v4l2_subdev_internal_ops tevs_internal_ops = {
-	.open = tevs_open,
-};
-
 static int tevs_power_on(struct device *dev)
 {
 	struct i2c_client *client = to_i2c_client(dev);
@@ -2061,11 +2072,38 @@ static int tevs_get_regulators(struct tevs *tevs)
 				       tevs->supplies);
 }
 
-static int tevs_check_hwcfg(struct device *dev)
+static const struct v4l2_subdev_core_ops tevs_v4l2_subdev_core_ops = {
+	.subscribe_event = v4l2_ctrl_subdev_subscribe_event,
+	.unsubscribe_event = v4l2_event_subdev_unsubscribe,
+};
+
+static const struct v4l2_subdev_video_ops tevs_v4l2_subdev_video_ops = {
+	.g_frame_interval = tevs_get_frame_interval,
+	.s_frame_interval = tevs_set_frame_interval,
+	.s_stream = tevs_set_stream,
+};
+
+static const struct v4l2_subdev_pad_ops tevs_v4l2_subdev_pad_ops = {
+	.enum_mbus_code = tevs_enum_mbus_code,
+	.get_fmt = tevs_get_fmt,
+	.set_fmt = tevs_set_fmt,
+	.get_selection = tevs_get_selection,
+	.enum_frame_size = tevs_enum_frame_size,
+	.enum_frame_interval = tevs_enum_frame_interval,
+};
+
+static const struct v4l2_subdev_ops tevs_subdev_ops = {
+	.core = &tevs_v4l2_subdev_core_ops,
+	.video = &tevs_v4l2_subdev_video_ops,
+	.pad = &tevs_v4l2_subdev_pad_ops,
+};
+
+static const struct v4l2_subdev_internal_ops tevs_internal_ops = {
+	.open = tevs_open,
+};
+
+static int tevs_check_hwcfg(struct device *dev, struct tevs *tevs)
 {
-	struct i2c_client *client = to_i2c_client(dev);
-	struct v4l2_subdev *sub_dev = i2c_get_clientdata(client);
-	struct tevs *tevs = to_tevs(sub_dev);
 	struct fwnode_handle *ep;
 	struct v4l2_fwnode_endpoint ep_cfg = {
 		.bus_type = V4L2_MBUS_CSI2_DPHY
@@ -2077,7 +2115,7 @@ static int tevs_check_hwcfg(struct device *dev)
 	if (IS_ERR(tevs->reset_gpio)) {
 		ret = PTR_ERR(tevs->reset_gpio);
 		if (ret != -EPROBE_DEFER)
-			dev_err(dev, "can not get reset GPIO (%d)", ret);
+			dev_err(dev, "Cannot get reset GPIO (%d)", ret);
 		return ret;
 	}
 
@@ -2086,7 +2124,7 @@ static int tevs_check_hwcfg(struct device *dev)
 	if (IS_ERR(tevs->standby_gpio)) {
 		ret = PTR_ERR(tevs->standby_gpio);
 		if (ret != -EPROBE_DEFER)
-			dev_err(dev, "can not get standby GPIO (%d)", ret);
+			dev_err(dev, "Cannot get standby GPIO (%d)", ret);
 		return ret;
 	}
 
@@ -2119,33 +2157,34 @@ static int tevs_check_hwcfg(struct device *dev)
 	/* Check the number of MIPI CSI2 data lanes */
 	if (ep_cfg.bus.mipi_csi2.num_data_lanes != 2 &&
 	    ep_cfg.bus.mipi_csi2.num_data_lanes != 4) {
-		dev_err(dev, "only 2 or 4 data lanes are currently supported\n");
+		dev_err(dev,
+			"only 2 or 4 data lanes are currently supported\n");
 		goto error_out;
 	}
 	tevs->data_lanes = ep_cfg.bus.mipi_csi2.num_data_lanes;
 
 	/* Check the link frequency set in device tree */
 	if (ep_cfg.nr_of_link_frequencies == 0)
-		tevs->data_frequency = div_u64(((u64)TEVS_LINK_FREQUENCY_DEFAULT * 2),
-							1000000ULL);
+		tevs->data_frequency =
+			(TEVS_LINK_FREQUENCY_DEFAULT / 1000000) * 2;
 	else if (ep_cfg.nr_of_link_frequencies == 1)
-		tevs->data_frequency = div_u64((ep_cfg.link_frequencies[0] * 2),
-							1000000ULL);
+		tevs->data_frequency =
+			(ep_cfg.link_frequencies[0] / 1000000) * 2;
 	else {
 		dev_err(dev, "invalid link frequencies %u on port\n",
-				ep_cfg.nr_of_link_frequencies);
+			ep_cfg.nr_of_link_frequencies);
 		goto error_out;
 	}
 
 	if ((tevs->data_frequency != 0) &&
 		((tevs->data_frequency < 100) || (tevs->data_frequency > 1200))) {
-		dev_err(dev,
-			"value of data-frequency [%d] is invaild\n",
+		dev_err(dev, "value of data-frequency [%d] is invaild\n",
 			tevs->data_frequency);
 		goto error_out;
 	}
 
-	tevs->continuous_clock = ~(ep_cfg.bus.mipi_csi2.flags) & V4L2_MBUS_CSI2_NONCONTINUOUS_CLOCK;
+	tevs->continuous_clock = ~(ep_cfg.bus.mipi_csi2.flags) &
+				 V4L2_MBUS_CSI2_NONCONTINUOUS_CLOCK;
 
 	dev_dbg(dev,
 		"data-lanes [%d], continuous-clock [%d],"
@@ -2157,13 +2196,14 @@ static int tevs_check_hwcfg(struct device *dev)
 error_out:
 	v4l2_fwnode_endpoint_free(&ep_cfg);
 	fwnode_handle_put(ep);
+
 	return ret;
 }
 
 static int tevs_probe(struct i2c_client *client)
 {
-	struct device *dev = &client->dev;
 	struct tevs *tevs = NULL;
+	struct device *dev = &client->dev;
 	struct v4l2_mbus_framefmt *fmt;
 	int i = ARRAY_SIZE(tevs_sensor_table);
 	int ret;
@@ -2173,7 +2213,7 @@ static int tevs_probe(struct i2c_client *client)
 
 	tevs = devm_kzalloc(dev, sizeof(struct tevs), GFP_KERNEL);
 	if (!tevs) {
-		dev_err(dev, "allocate memory failed\n");
+		dev_err(dev, "Allocate memory failed\n");
 		return -ENOMEM;
 	}
 
@@ -2182,12 +2222,12 @@ static int tevs_probe(struct i2c_client *client)
 	i2c_set_clientdata(client, tevs);
 	tevs->regmap = devm_regmap_init_i2c(client, &tevs_regmap_config);
 	if (IS_ERR(tevs->regmap)) {
-		dev_err(dev, "unable to initialize I2C\n");
+		dev_err(dev, "Unable to initialize I2C\n");
 		return -ENODEV;
 	}
 
 	/* Check the hardware configuration in device tree */
-	if (tevs_check_hwcfg(dev))
+	if (tevs_check_hwcfg(dev, tevs))
 		return -EINVAL;
 
 	ret = tevs_get_regulators(tevs);
@@ -2208,6 +2248,7 @@ static int tevs_probe(struct i2c_client *client)
 		msleep(TEVS_BOOT_TIME);
 		if (tevs_check_boot_state(tevs) != 0) {
 			dev_err(dev, "check tevs bootup status failed\n");
+			ret = -ENODEV;
 			goto error_power_off;
 		}
 		if (ret < 0) {
@@ -2218,7 +2259,7 @@ static int tevs_probe(struct i2c_client *client)
 
 	ret = tevs_check_version(tevs);
 	if (ret < 0) {
-		dev_err(dev, "dev init failed\n");
+		dev_err(dev, "check device version failed\n");
 		goto error_power_off;
 	}
 
@@ -2232,20 +2273,39 @@ static int tevs_probe(struct i2c_client *client)
 
 	ret = tevs_load_header_info(tevs);
 	if (ret < 0) {
-		dev_err(dev, "otp flash init failed\n");
+		dev_err(dev, "load header information failed\n");
 		goto error_power_off;
-	} else {
+	}
+
+	ret = tevs_get_chip_id(tevs);
+
+	if (ret < 0) {
+		dev_err(dev, "get chip ID failed\n");
+		goto error_power_off;
+	}
+
+	if (tevs->chip_id == SENSOR_CHIP_ID_NONE) {
 		for (i = 0; i < ARRAY_SIZE(tevs_sensor_table); i++) {
 			if (strcmp((const char *)tevs->header_info->product_name,
 				   tevs_sensor_table[i].sensor_name) == 0)
 				break;
 		}
+	} else {
+		for (i = 0; i < ARRAY_SIZE(tevs_sensor_table); i++) {
+			if (tevs->chip_id == tevs_sensor_table[i].chip_id)
+				break;
+		}
 	}
 
 	if (i >= ARRAY_SIZE(tevs_sensor_table)) {
-		dev_err(dev, "can not not support the product: %s\n",
-			(const char *)tevs->header_info->product_name);
-		ret = -EINVAL;
+		if (tevs->chip_id == SENSOR_CHIP_ID_NONE)
+			dev_err(dev, "cannot not support the product: %s\n",
+				(const char *)tevs->header_info->product_name);
+		else
+			dev_err(dev, "cannot not support the chip ID: 0x%.4X\n",
+				tevs->chip_id);
+
+		ret = -ENODEV;
 		goto error_power_off;
 	}
 
@@ -2264,10 +2324,11 @@ static int tevs_probe(struct i2c_client *client)
 	fmt->ycbcr_enc = V4L2_MAP_YCBCR_ENC_DEFAULT(fmt->colorspace);
 	fmt->quantization = V4L2_QUANTIZATION_FULL_RANGE;
 	fmt->xfer_func = V4L2_MAP_XFER_FUNC_DEFAULT(fmt->colorspace);
+	memset(fmt->reserved, 0, sizeof(fmt->reserved));
 
 	ret = tevs_ctrls_init(tevs);
 	if (ret) {
-		dev_err(&client->dev, "failed to init controls: %d", ret);
+		dev_err(dev, "failed to init controls: %d", ret);
 		goto error_power_off;
 	}
 
@@ -2279,7 +2340,9 @@ static int tevs_probe(struct i2c_client *client)
 
 	/* Initialize source pads */
 	tevs->pad.flags = MEDIA_PAD_FL_SOURCE;
-
+	tevs->fps = tevs_sensor_table[tevs->selected_sensor]
+			    .res_list[0]
+			    .framerates[0];
 	ret = media_entity_pads_init(&tevs->v4l2_subdev.entity, 1, &tevs->pad);
 	if (ret) {
 		dev_err(dev, "failed to init entity pads: %d\n", ret);
@@ -2295,8 +2358,30 @@ static int tevs_probe(struct i2c_client *client)
 
 	ret = v4l2_async_register_subdev_sensor(&tevs->v4l2_subdev);
 	if (ret != 0) {
-		dev_err(dev, "failed to register sensor sub-device: %d\n", ret);
-		goto error_subdev_cleanup;
+		dev_err(dev, "v4l2 register failed\n");
+		goto error_media_entity;
+	}
+
+	if (tevs->trigger_mode) {
+		ret = tevs_set_trigger_mode(tevs, tevs->trigger_mode);
+		if (ret != 0) {
+			dev_err(dev, "set trigger mode failed\n");
+			goto error_media_entity;
+		}
+	}
+
+	if (!(tevs->hw_reset_mode | tevs_check_trigger_mode(tevs))) {
+		ret = tevs_standby(tevs, 1);
+		if (ret != 0) {
+			dev_err(dev, "set standby mode failed\n");
+			goto error_media_entity;
+		}
+	} else {
+		ret = tevs_power_off(dev);
+		if (ret != 0) {
+			dev_err(dev, "set power off failed\n");
+			goto error_media_entity;
+		}
 	}
 
 	dev_info(dev, "probe success\n");
@@ -2307,9 +2392,6 @@ static int tevs_probe(struct i2c_client *client)
 
 	return 0;
 
-error_subdev_cleanup:
-	v4l2_subdev_cleanup(&tevs->v4l2_subdev);
-
 error_media_entity:
 	media_entity_cleanup(&tevs->v4l2_subdev.entity);
 
@@ -2319,6 +2401,7 @@ error_handler_free:
 error_power_off:
 	tevs_power_off(dev);
 
+	dev_err(dev, "probe failed\n");
 	return ret;
 }
 
@@ -2400,7 +2483,7 @@ static struct i2c_driver sensor_i2c_driver = {
 module_i2c_driver(sensor_i2c_driver);
 
 MODULE_AUTHOR("TECHNEXION Inc.");
-MODULE_DESCRIPTION("TechNexion driver for TEVS");
+MODULE_DESCRIPTION("TechNexion TEVS camera driver");
 MODULE_LICENSE("GPL v2");
-MODULE_VERSION("1.0");
+MODULE_VERSION("2.0");
 MODULE_ALIAS("Camera");
