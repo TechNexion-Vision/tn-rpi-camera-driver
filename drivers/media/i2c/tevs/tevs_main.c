@@ -941,7 +941,10 @@ static int tevs_enum_frame_interval(struct v4l2_subdev *sub_dev,
 	struct tevs *tevs = to_tevs(sub_dev);
 	int i;
 
-	if ((fie->pad != 0) || (fie->index != 0))
+	if ((fie->pad != 0) ||
+	    (fie->index >= ARRAY_SIZE(tevs_sensor_table[tevs->selected_sensor]
+					      .res_list[fie->index]
+					      .framerates)))
 		return -EINVAL;
 
 	dev_dbg(sub_dev->dev, "%s() index [%u]\n", __func__, fie->index);
