@@ -105,6 +105,8 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
 	hifiberry-dacplushd.dtbo \
 	hifiberry-digi.dtbo \
 	hifiberry-digi-pro.dtbo \
+	hifiberry-studio-dac8x.dtbo \
+	hifiberry-studio-dac8x-pro.dtbo \
 	highperi.dtbo \
 	hy28a.dtbo \
 	hy28b.dtbo \
@@ -193,6 +195,7 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
 	mlx90640.dtbo \
 	mmc.dtbo \
 	mz61581.dtbo \
+	nospi10.dtbo \
 	ov2311.dtbo \
 	ov5647.dtbo \
 	ov64a40.dtbo \
@@ -225,6 +228,7 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
 	pitft35-resistive.dtbo \
 	pivision.dtbo \
 	pps-gpio.dtbo \
+	pps-rp1.dtbo \
 	proto-codec.dtbo \
 	pwm.dtbo \
 	pwm-2chan.dtbo \
@@ -309,6 +313,8 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
 	tc358743-pi5.dtbo \
 	tevs-rpi15.dtbo \
 	tevs-rpi22.dtbo \
+	tevm-rpi15.dtbo \
+	tevm-rpi22.dtbo \
 	tinylcd35.dtbo \
 	tpm-slb9670.dtbo \
 	tpm-slb9673.dtbo \
@@ -336,6 +342,7 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
 	vc4-kms-dpi-panel.dtbo \
 	vc4-kms-dsi-7inch.dtbo \
 	vc4-kms-dsi-generic.dtbo \
+	vc4-kms-dsi-ili79600-10-1inch.dtbo \
 	vc4-kms-dsi-ili9881-5inch.dtbo \
 	vc4-kms-dsi-ili9881-7inch.dtbo \
 	vc4-kms-dsi-lt070me05000.dtbo \
