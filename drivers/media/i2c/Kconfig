@@ -719,9 +719,6 @@ config VIDEO_TEVS
 	  This is a Video4Linux2 sensor driver for the TechNexion
 	  TEVS camera sensor with a MIPI CSI-2 interface.
 
-	  To compile this driver as a module, choose M here: the
-	  module will be called tevs.
-
 source "drivers/media/i2c/ccs/Kconfig"
 source "drivers/media/i2c/et8ek8/Kconfig"
 
