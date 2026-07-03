@@ -386,6 +386,9 @@ struct tevs {
 
 	/* Streaming on/off */
 	bool streaming;
+
+	/* BSL mode flag */
+	bool bsl_check;
 };
 
 static const struct regmap_config tevs_regmap_config = {
@@ -1305,6 +1308,9 @@ static int tevs_set_bsl_mode(struct tevs *tevs, s32 mode)
 	int ret = 0;
 	dev_dbg(&client->dev, "%s(): set bls mode: %d", __func__, mode);
 
+	if (tevs->bsl_check == mode)
+		return 0;
+
 	switch (mode) {
 	case TEVS_BSL_MODE_NORMAL_IDX:
 		ret = regulator_bulk_disable(TEVS_NUM_SUPPLIES, tevs->supplies);
@@ -1392,7 +1398,8 @@ static int tevs_set_bsl_mode(struct tevs *tevs, s32 mode)
 			mode);
 		break;
 	}
-
+	
+	tevs->bsl_check = mode;
 	return ret;
 }
 
@@ -1954,6 +1961,7 @@ static int tevs_ctrls_init(struct tevs *tevs)
 	tevs->pixel_rate->flags |= V4L2_CTRL_FLAG_READ_ONLY;
 
 	tevs->bsl = v4l2_ctrl_new_custom(ctrl_hdlr, &tevs_bsl_mode, NULL);
+	tevs->bsl_check = 0;
 
 	tevs->max_fps = v4l2_ctrl_new_custom(ctrl_hdlr, &tevs_max_fps, NULL);
 	ret = tevs_i2c_read_16b(tevs, TEVS_MAX_FPS, &val);
