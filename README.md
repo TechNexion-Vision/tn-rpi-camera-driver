@@ -7,4 +7,4 @@
 
 In this guide, you can use the following cameras on Raspberry Pi.
 
-[TechNexion cameras Developer Guide with Raspberry Pi](https://developer.technexion.com/docs/embedded-vision/tevs/usage-guides/raspberrypi/)
+[TechNexion cameras Developer Guide with Raspberry Pi](https://developer.technexion.com/docs/embedded-vision/mipi-csi-2/raspberrypi/)
