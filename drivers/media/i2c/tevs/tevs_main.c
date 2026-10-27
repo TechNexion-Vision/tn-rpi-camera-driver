@@ -508,6 +508,8 @@ static int tevs_standby(struct tevs *tevs, int enable)
 	dev_dbg(&client->dev, "%s():enable=%d\n", __func__, enable);
 
 	if (enable == 1) {
+		if(tevs->trigger_mode)
+			return 0;
 		cci_write(tevs->regmap, HOST_COMMAND_ISP_CTRL_SYSTEM_START,
 			  0x0000, NULL);
 		usleep_range(9000, 10000);
@@ -587,10 +589,10 @@ static int tevs_set_stream(struct v4l2_subdev *sub_dev, int enable)
 	dev_dbg(sub_dev->dev, "%s() enable [%x]\n", __func__, enable);
 
 	if (enable == 0) {
-		if (!(tevs->hw_reset_mode | tevs_check_trigger_mode(tevs)))
+		if (!(tevs->hw_reset_mode))
 			ret = tevs_standby(tevs, 1);
 	} else {
-		if (!(tevs->hw_reset_mode | tevs_check_trigger_mode(tevs)))
+		if (!(tevs->hw_reset_mode))
 			ret = tevs_standby(tevs, 0);
 
 		if (ret == 0) {
