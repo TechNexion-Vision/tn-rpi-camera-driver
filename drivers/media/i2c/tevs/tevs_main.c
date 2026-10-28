@@ -550,6 +550,8 @@ static int tevs_standby(struct tevs *tevs, int enable)
 	dev_dbg(&client->dev, "%s():enable=%d\n", __func__, enable);
 
 	if (enable == 1) {
+		if(tevs->trigger_mode)
+			return 0;
 		tevs_i2c_write_16b(tevs, HOST_COMMAND_ISP_CTRL_SYSTEM_START,
 				   0x0000);
 		while (timeout < 100) {
@@ -679,7 +681,7 @@ static int tevs_start_streaming(struct tevs *tevs)
 		goto err_rpm_put;
 	}
 
-	if (!(tevs->hw_reset_mode | tevs_check_trigger_mode(tevs)))
+	if (!(tevs->hw_reset_mode))
 		ret = tevs_standby(tevs, 0);
 	if (ret == 0) {
 		dev_dbg(&client->dev, "%s() width=%d, height=%d, fps=%d\n", __func__,
@@ -746,7 +748,7 @@ static void tevs_stop_streaming(struct tevs *tevs)
 	int ret = 0;
 
 	/* set stream off register */
-	if (!(tevs->hw_reset_mode | tevs_check_trigger_mode(tevs))) {
+	if (!(tevs->hw_reset_mode)) {
 		ret = tevs_standby(tevs, 1);
 		if (ret)
 			dev_err(&client->dev, "%s failed to set stream\n",
